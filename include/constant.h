@@ -1,0 +1,4 @@
+#define BLOCK_NUM 16384
+#define BLOCK_SIZE 1024
+#define LIST_NODE 512
+#define LIST_MAX_LENGTH 32
