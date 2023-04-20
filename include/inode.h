@@ -2,6 +2,7 @@ struct inodeMeta {
     unsigned short name_start;
     unsigned short name_length;
     unsigned short record_num_start;
+    unsigned short isdir_start;
     unsigned short start;
 };
 
@@ -13,6 +14,8 @@ public:
     void getName(unsigned char*);
     void setRecord(unsigned short);
     unsigned short getRecord();
+    void setIsDir(bool);
+    bool isDir();
     void appendAddress(unsigned char*);
     void getAddress(unsigned short, unsigned char*);
     unsigned short begin();
@@ -25,5 +28,5 @@ private:
 };
 
 // first 100 byte used to store inode attribute
-// each address 3 byte, 11 address, 33 byte
+// each block address 2 byte, 11 address, 22 byte
 

@@ -5,8 +5,9 @@ Inode::Inode(unsigned char* block) {
     this->block = block;
     meta.name_start = 0;
     meta.name_length = 14;
-    meta.start = 100;
     meta.record_num_start = 14;
+    meta.isdir_start = 16;
+    meta.start = 100;
 }
 
 void Inode::initialize() {
@@ -38,18 +39,24 @@ unsigned short Inode::getRecord() {
     return byteToShort(temp);
 }
 
+void Inode::setIsDir(bool dir) {
+    block[meta.isdir_start] = dir;
+}
+
+bool Inode::isDir() {
+    return (bool) block[meta.isdir_start];
+}
+
 void Inode::appendAddress(unsigned char* addr) {
-    unsigned short curr = meta.start + getRecord() * 3;
+    unsigned short curr = meta.start + getRecord() * 2;
     block[curr] = addr[0];
     block[curr + 1] = addr[1];
-    block[curr + 2] = addr[2];
     setRecord(getRecord() + 1);
 }
 
 void Inode::getAddress(unsigned short iter, unsigned char* addr) {
     addr[0] = block[iter];
     addr[1] = block[iter+1];
-    addr[2] = block[iter+2];
 }
 
 unsigned short Inode::begin() {
@@ -57,9 +64,9 @@ unsigned short Inode::begin() {
 } 
 
 unsigned short Inode::end() {
-    return meta.start + getRecord() * 3;
+    return meta.start + getRecord() * 2;
 }
 
 unsigned short Inode::next(unsigned short iter) {
-    return iter+3;
+    return iter+2;
 }
