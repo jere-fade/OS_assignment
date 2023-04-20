@@ -25,6 +25,8 @@ public:
     unsigned short getOffset();
     void setOffset(unsigned short);
 
+    unsigned short listSize();
+
 private:
     unsigned char** disk;
     struct Meta meta;

@@ -145,3 +145,20 @@ void BlockManager::setOffset(unsigned short num) {
     disk[meta.list_offset[0]][meta.list_offset[1]] = temp[0];
     disk[meta.list_offset[0]][meta.list_offset[1]+1] = temp[1];
 }
+
+unsigned short BlockManager::listSize() {
+    unsigned short currHead = getHead();
+    unsigned short sum = 0;
+    unsigned char temp[2];
+    sum += getOffset() / 2;
+    while (true) {
+        temp[0] = disk[currHead][1022];
+        temp[1] = disk[currHead][1023];
+        currHead = byteToShort(temp);
+        if(currHead == 0) {
+            break;
+        }
+        sum += 511;
+    }
+    return sum;
+}
