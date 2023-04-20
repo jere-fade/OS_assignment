@@ -3,6 +3,15 @@
 #include"utils.h"
 #include<iostream>
 
+BlockManager::BlockManager() {
+    meta.rootDir = 0;
+    meta.list_head[0] = 1;
+    meta.list_head[1] = 0;
+    meta.list_offset[0] = 1;
+    meta.list_offset[1] = 2;
+    disk = nullptr; 
+}
+
 // meta 是存 free list 头部信息的位置, 目前放在block 1
 BlockManager::BlockManager(unsigned char** disk) {
     meta.rootDir = 0;

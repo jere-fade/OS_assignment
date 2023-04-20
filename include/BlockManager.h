@@ -6,6 +6,7 @@ struct Meta{
 
 class BlockManager {
 public:
+    BlockManager();
     BlockManager(unsigned char**);
 
     void format();
