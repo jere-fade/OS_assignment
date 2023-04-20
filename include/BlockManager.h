@@ -1,4 +1,5 @@
 struct Meta{
+    unsigned short rootDir;
     unsigned short list_head[2];
     unsigned short list_offset[2];
 };
@@ -12,6 +13,8 @@ public:
     void buildVolume();
 
     unsigned short allocate();
+
+    unsigned short getRootBlock();
 
     void free(unsigned short);
 
