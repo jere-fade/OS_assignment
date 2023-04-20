@@ -1,8 +1,12 @@
+#include "indirect.h"
+#include <ctime>
+
 struct inodeMeta {
     unsigned short name_start;
     unsigned short name_length;
     unsigned short record_num_start;
     unsigned short isdir_start;
+    unsigned short ctime_start;
     unsigned short start;
 };
 
@@ -16,6 +20,8 @@ public:
     unsigned short getRecord();
     void setIsDir(bool);
     bool isDir();
+    void setCtime(std::time_t);
+    std::time_t getCtime();
     void appendAddress(unsigned char*);
     void getAddress(unsigned short, unsigned char*);
     unsigned short begin();
@@ -26,7 +32,4 @@ private:
     unsigned char* block;
     inodeMeta meta;
 };
-
-// first 100 byte used to store inode attribute
-// each block address 2 byte, 11 address, 22 byte
 

@@ -1,17 +1,20 @@
 #include "inode.h"
 #include "utils.h"
+#include <ctime>
 
 Inode::Inode(unsigned char* block) {
     this->block = block;
     meta.name_start = 0;
-    meta.name_length = 14;
-    meta.record_num_start = 14;
-    meta.isdir_start = 16;
+    meta.name_length = 62;
+    meta.record_num_start = 62;
+    meta.isdir_start = 64;
+    meta.ctime_start = 65;
     meta.start = 100;
 }
 
 void Inode::initialize() {
     setRecord(0);
+    setCtime(std::time(nullptr));
 }
 
 void Inode::setName(unsigned char* name) {
@@ -45,6 +48,20 @@ void Inode::setIsDir(bool dir) {
 
 bool Inode::isDir() {
     return (bool) block[meta.isdir_start];
+}
+
+void Inode::setCtime(std::time_t time) {
+    for (int i = 0; i < 8; i++) {
+        block[meta.ctime_start + i] = (time >> (7-i)*8 ) & 0xFF; 
+    }
+}
+
+std::time_t Inode::getCtime() {
+    std::time_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result += (block[meta.ctime_start + i] << ((7-i)*8));
+    }
+    return result;
 }
 
 void Inode::appendAddress(unsigned char* addr) {
