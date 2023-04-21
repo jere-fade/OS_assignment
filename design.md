@@ -31,6 +31,8 @@ Directory Entry (15 entries total)
 |2 bytes --|62 bytes ---------------|
 ```
 
+约定folder inode的第一个node指向的directory node中第一第二个entry分别为'.' 和'..'(root directory 没有'..')
+
 # indirect block
 
 ```
