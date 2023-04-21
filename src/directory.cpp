@@ -41,6 +41,17 @@ void Directory::getEntry(unsigned short iter, unsigned char* entry) {
     }
 }
 
+void Directory::getNum(unsigned short iter, unsigned char* num) {
+    num[0] = block[iter];
+    num[1] = block[iter+1];
+}
+
+void Directory::getName(unsigned short iter, unsigned char* name) {
+    for (int i = 0; i < meta.name_length; i++) {
+        name[i] = block[2 + i];
+    }
+}
+
 unsigned short Directory::begin() {
     return meta.start;
 }

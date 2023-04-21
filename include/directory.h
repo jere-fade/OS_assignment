@@ -13,6 +13,8 @@ public:
     unsigned short getRecord();
     void appendEntry(unsigned char* entry);
     void getEntry(unsigned short iter, unsigned char* entry);
+    void getNum(unsigned short iter, unsigned char* num);
+    void getName(unsigned short iter, unsigned char* name);
     unsigned short begin();
     unsigned short end();
     unsigned short next(unsigned short);

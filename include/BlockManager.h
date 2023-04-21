@@ -1,3 +1,6 @@
+#ifndef BLOCK_MANAGER_H
+#define BLOCK_MANAGER_H
+
 struct Meta{
     unsigned short rootDir;
     unsigned short list_head[2];
@@ -33,3 +36,5 @@ private:
     struct Meta meta;
 
 };
+
+#endif
