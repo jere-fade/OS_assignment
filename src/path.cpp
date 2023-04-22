@@ -46,6 +46,15 @@ bool Path::isRelative() {
     return relative;
 }
 
+bool Path::isRoot() {
+    if (depth == 0 && strlen((char*)path[0]) == 0) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 unsigned short Path::begin() {
     return 0;
 }
@@ -57,3 +66,42 @@ unsigned short Path::end() {
 unsigned short Path::next(unsigned short iter) {
     return iter+1;
 } 
+
+void Path::separate(unsigned char* path, unsigned char* name) {
+    int path_count = 0;
+    int name_count = 0;
+    unsigned char temp[62];
+    if(isRoot()) {
+        path[0] = '/';
+        path[1] = '\0';
+        name[0] = '\0';
+    }
+    else {
+        for (auto iter = begin(); iter < end(); iter = next(iter)) {
+            getPath(iter, temp);
+            if(isRelative() && iter == begin()) {}
+            else {
+                path[path_count] = '/';
+                path_count++; 
+            }
+            if(next(iter) == end()) {
+                for(size_t k = 0; k < strlen((char*)temp); k++) {
+                    name[name_count] = temp[k];
+                    name_count++;
+                }
+                break;
+            }
+            for(size_t i = 0; i < strlen((char*)temp); i++) {
+                path[path_count] = temp[i];
+                path_count++;
+            }
+        }
+        if(path_count > 1 && path[path_count - 1] == '/') {
+            path[path_count-1] = '\0';
+        } 
+        else {
+            path[path_count] = '\0';
+            name[name_count] = '\0';
+        }
+    }
+}
