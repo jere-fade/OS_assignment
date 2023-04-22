@@ -34,6 +34,5 @@ private:
     unsigned char* block;
     inodeMeta meta;
     BlockManager manager;
-    unsigned char* indir;
 };
 

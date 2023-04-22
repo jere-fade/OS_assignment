@@ -7,7 +7,7 @@
 Indirect::Indirect(unsigned char* block) {
     meta.record_num_start = 0;
     meta.start = 4;
-    this -> block = block;
+    this->block = block;
 }
 
 void Indirect::initialize() {

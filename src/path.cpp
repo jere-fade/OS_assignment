@@ -79,7 +79,12 @@ void Path::separate(unsigned char* path, unsigned char* name) {
     else {
         for (auto iter = begin(); iter < end(); iter = next(iter)) {
             getPath(iter, temp);
-            if(isRelative() && iter == begin()) {}
+            if(isRelative() && iter == begin()) {
+                path[path_count] = '.';
+                path_count++;
+                path[path_count] = '/';
+                path_count++;
+            }
             else {
                 path[path_count] = '/';
                 path_count++; 
