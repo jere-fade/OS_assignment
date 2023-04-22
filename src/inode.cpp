@@ -45,6 +45,16 @@ unsigned short Inode::getRecord() {
     return byteToShort(temp);
 }
 
+unsigned short Inode::getTotalRecord() {
+    if(indir != nullptr) {
+        Indirect indirect = Indirect(indir);
+        return indirect.getRecord() + getRecord()-1;
+    }
+    else {
+        return getRecord();
+    }
+}
+
 void Inode::setIsDir(bool dir) {
     block[meta.isdir_start] = dir;
 }

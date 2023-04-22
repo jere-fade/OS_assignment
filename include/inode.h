@@ -17,8 +17,7 @@ public:
     void initialize();
     void setName(unsigned char*);
     void getName(unsigned char*);
-    void setRecord(unsigned short);
-    unsigned short getRecord();
+    unsigned short getTotalRecord();
     void setIsDir(bool);
     bool isDir();
     void setCtime(std::time_t);
@@ -30,6 +29,8 @@ public:
     unsigned short next(unsigned short);
     
 private:
+    void setRecord(unsigned short);
+    unsigned short getRecord();
     unsigned char* block;
     inodeMeta meta;
     BlockManager manager;
