@@ -1,9 +1,12 @@
 #include "inode.h"
 #include "utils.h"
+#include <iostream>
 #include <ctime>
 
-Inode::Inode(unsigned char* block) {
+Inode::Inode(unsigned char* block, BlockManager manager) {
     this->block = block;
+    this->manager = manager;
+    this->indir = nullptr;
     meta.name_start = 0;
     meta.name_length = 62;
     meta.record_num_start = 62;
@@ -65,15 +68,41 @@ std::time_t Inode::getCtime() {
 }
 
 void Inode::appendAddress(unsigned char* addr) {
-    unsigned short curr = meta.start + getRecord() * 2;
-    block[curr] = addr[0];
-    block[curr + 1] = addr[1];
-    setRecord(getRecord() + 1);
+    if (indir != nullptr) {
+        Indirect indirect = Indirect(indir);
+        if(indirect.getRecord() == 510) {
+            std::cout<<"[ERROR] Inode Reach Maximum Capacity"<<std::endl;
+            exit(1);
+        }
+        indirect.appendAddress(addr);
+    }
+    else {
+        unsigned short curr = meta.start + getRecord() * 2;
+        block[curr] = addr[0];
+        block[curr + 1] = addr[1];
+        setRecord(getRecord() + 1);
+        if(getRecord() == 11) {
+            unsigned char** disk = nullptr;
+            indir = manager.disk[manager.allocate()];
+            Indirect indirect = Indirect(indir);
+            indirect.appendAddress(addr);
+        }
+    }
+
 }
 
 void Inode::getAddress(unsigned short iter, unsigned char* addr) {
-    addr[0] = block[iter];
-    addr[1] = block[iter+1];
+
+    if(iter < meta.start + 10*2) {
+        addr[0] = block[iter];
+        addr[1] = block[iter+1];
+    }
+    else {
+        Indirect indirect = Indirect(indir);
+        unsigned short converted = iter - (meta.start + 10*2) + indirect.begin();
+        indirect.getAddress(converted, addr);
+    }
+
 }
 
 unsigned short Inode::begin() {
@@ -81,9 +110,15 @@ unsigned short Inode::begin() {
 } 
 
 unsigned short Inode::end() {
-    return meta.start + getRecord() * 2;
+    if(indir != nullptr) {
+        Indirect indirect = Indirect(indir);
+        return meta.start + 10 * 2 + indirect.end() - indirect.begin();
+    }
+    else {
+        return meta.start + getRecord() * 2;
+    }
 }
 
 unsigned short Inode::next(unsigned short iter) {
-    return iter+2;
+    return iter + 2;
 }

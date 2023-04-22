@@ -17,7 +17,7 @@ public:
     void buildVolume();
 
     unsigned short allocate();
-
+    
     unsigned short getRootBlock();
 
     void free(unsigned short);
@@ -31,8 +31,9 @@ public:
 
     unsigned short listSize();
 
-private:
     unsigned char** disk;
+
+private:
     struct Meta meta;
 
 };

@@ -1,4 +1,5 @@
 #include "indirect.h"
+#include "BlockManager.h"
 #include <ctime>
 
 struct inodeMeta {
@@ -12,7 +13,7 @@ struct inodeMeta {
 
 class Inode {
 public:
-    Inode(unsigned char*);
+    Inode(unsigned char*, BlockManager);
     void initialize();
     void setName(unsigned char*);
     void getName(unsigned char*);
@@ -31,5 +32,7 @@ public:
 private:
     unsigned char* block;
     inodeMeta meta;
+    BlockManager manager;
+    unsigned char* indir;
 };
 
