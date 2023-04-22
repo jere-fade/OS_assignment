@@ -7,6 +7,7 @@ public:
     bool changeDir(unsigned char* des);
     void getPath(unsigned char* path);
     void createDir(unsigned char* des);
+    void listDir();
 private:
     unsigned char** disk;
     BlockManager manager;

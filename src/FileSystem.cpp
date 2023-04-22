@@ -44,6 +44,9 @@ bool FileSystem::changeDir(unsigned char* des) {
     Path path(des);
     if(!path.isRelative()) {
         dir = manager.getRootBlock();
+        if(path.isRoot()) {
+            return true;
+        }
     }
     unsigned char path_name[62];
     unsigned char name[62];
@@ -127,6 +130,7 @@ void FileSystem::createDir(unsigned char* des) {
                     Inode curr_node = Inode(disk[byteToShort(temp)], manager);
                     if(curr_node.isDir()) {
                         std::cout<<"folder already exists"<<std::endl;
+                        dir = dir_backup;
                         return;
                     }
                 }
@@ -176,12 +180,15 @@ void FileSystem::createDir(unsigned char* des) {
                 entry[4] = '\0'; 
                 new_dir.appendEntry(entry);
 
+                dir = dir_backup;
+                return;
             }
         }
         // 当前已分配directory node全部装满, 需要新分配一个
 
         if(dir_node.getTotalRecord() >= 520) {
             std::cout<<"destination folder is full"<<std::endl;
+            dir = dir_backup;
             return;
         }
         else {
@@ -223,10 +230,25 @@ void FileSystem::createDir(unsigned char* des) {
             entry[3] = '.';
             entry[4] = '\0'; 
             new_dir.appendEntry(entry);
+
+            dir = dir_backup;
         }
     }
+}
 
-
+void FileSystem::listDir() {
+    Inode node = Inode(disk[dir], manager);
+    unsigned char temp[2];
+    unsigned char name[62];
+    for (auto iter = node.begin(); iter < node.end(); iter = node.next(iter)) {
+        node.getAddress(iter, temp);
+        Directory directory = Directory(disk[byteToShort(temp)]);
+        for (auto dir_iter = directory.begin(); dir_iter < directory.end(); dir_iter = directory.next(dir_iter)) {
+            directory.getName(dir_iter, name);
+            std::cout<<name<<"  ";
+        }
+    }
+    std::cout<<std::endl;
 }
 
 void FileSystem::getPath(unsigned char* path) {
@@ -266,10 +288,10 @@ void FileSystem::getPath(unsigned char* path) {
                 path[char_count] = name_temp[j];
                 char_count++;
             }
-            if (i != 0) {
-                path[char_count] = '/';
-                char_count++;            
-            }
+            // if (i != 0) {
+            //     path[char_count] = '/';
+            //     char_count++;            
+            // }
         }
         path[char_count] = '\0';
     }

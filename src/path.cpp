@@ -98,6 +98,7 @@ void Path::separate(unsigned char* path, unsigned char* name) {
         }
         if(path_count > 1 && path[path_count - 1] == '/') {
             path[path_count-1] = '\0';
+            name[name_count] = '\0';
         } 
         else {
             path[path_count] = '\0';

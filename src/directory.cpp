@@ -28,7 +28,7 @@ unsigned short Directory::getRecord() {
 }
 
 void Directory::appendEntry(unsigned char* entry) {
-    unsigned short curr = meta.start + getRecord() * 3;
+    unsigned short curr = meta.start + getRecord() * meta.entry_length;
     for (int i = 0; i < meta.entry_length; i++) {
         block[curr + i] = entry[i];
     }
@@ -48,7 +48,7 @@ void Directory::getNum(unsigned short iter, unsigned char* num) {
 
 void Directory::getName(unsigned short iter, unsigned char* name) {
     for (int i = 0; i < meta.name_length; i++) {
-        name[i] = block[2 + i];
+        name[i] = block[iter + 2 + i];
     }
 }
 
@@ -57,9 +57,9 @@ unsigned short Directory::begin() {
 }
 
 unsigned short Directory::end() {
-    return meta.start + getRecord() * 16;
+    return meta.start + getRecord() * meta.entry_length;
 }
 
 unsigned short Directory::next(unsigned short iter) {
-    return iter + 16;
+    return iter + meta.entry_length;
 }
