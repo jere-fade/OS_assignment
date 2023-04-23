@@ -1,3 +1,5 @@
+#ifndef INODE_H
+#define INODE_H
 #include "indirect.h"
 #include "BlockManager.h"
 #include <ctime>
@@ -23,10 +25,12 @@ public:
     void setCtime(std::time_t);
     std::time_t getCtime();
     void appendAddress(unsigned char*);
+    void deleteAddress(unsigned short);
     void getAddress(unsigned short, unsigned char*);
     unsigned short begin();
     unsigned short end();
     unsigned short next(unsigned short);
+    void free();
     
 private:
     void setRecord(unsigned short);
@@ -36,3 +40,4 @@ private:
     BlockManager manager;
 };
 
+#endif

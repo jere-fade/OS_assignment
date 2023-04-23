@@ -1,12 +1,16 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string.h>
 #include <bitset>
+#include <ctime>
 #include "BlockManager.h"
 #include "inode.h"
 #include "directory.h"
 #include "constant.h"
 #include "utils.h"
+#include "FileSystem.h"
+#include "path.h"
 
 int main(int, char**) {
 
@@ -28,27 +32,100 @@ int main(int, char**) {
     }
 
     BlockManager manager(disk);
-    bool format_build = false;
+    bool format_build = true;
     if (format_build) {
         manager.format();
         manager.buildVolume();
     }
     std::cout<<"list head: "<< manager.getHead() <<std::endl;
     std::cout<<"list offset: "<< manager.getOffset() <<std::endl;
+    std::cout<<"list size: "<< manager.listSize() << std::endl;
+
+    // unsigned short node_num = manager.allocate();
+    // Inode node = Inode(disk[node_num], manager);
+    // unsigned char temp[2];
+
+    // for(unsigned short i = 0; i < 520; i++) {
+    //     shortToByte(i, temp);
+    //     node.appendAddress(temp);
+    // }
+
+    // for(int i = 0; i < 500; i++) {
+    //     auto iter = node.begin();
+    //     node.deleteAddress(iter);
+    // } 
+
+
+    // manager.printDisk(16383);
+
+    // for(auto i = node.begin(); i < node.end(); i = node.next(i)) {
+    //     node.getAddress(i, temp);
+    //     std::cout<<byteToShort(temp)<<" ";
+    // }
+    // std::cout<<std::endl;
+
+
+    unsigned char path[2048];
+    FileSystem fs = FileSystem(disk);
+    fs.initialize();
+    std::cout<<"list size: "<<manager.listSize()<<std::endl;
+    for(int i = 0; i < 200; i++) {
+        sprintf((char*)path, "%d", i);
+        fs.createDir(path);
+    }
+    fs.listDir();
+    std::cout<<"list size: "<<manager.listSize()<<std::endl;
+    std::cout<<"--------------"<<std::endl;
+    for(int i = 0; i < 180; i++) {
+        sprintf((char*)path, "%d", i);
+        fs.deleteDir(path);
+    }
+    fs.listDir();
+    std::cout<<"list size: "<<manager.listSize()<<std::endl;
+    // fs.createDir((unsigned char*)"/etc");
+    // fs.createDir((unsigned char*)"etc/nginx");
+    // fs.createDir((unsigned char*)"etc/xray");
+    // fs.createDir((unsigned char*)"etc/nginx/log");
+    // fs.changeDir((unsigned char*)"./etc/nginx");
+    // fs.createDir((unsigned char*)"./error");
+    // fs.createDir((unsigned char*)"../x2ray");
+    // fs.listDir();
+    // BlockManager manager1(disk);
+    // unsigned char path[2048];
+    // fs.getPath(path);
+    // std::cout<<path<<std::endl;
+    // Path path((unsigned char*)"nginx/log/error.log");
+    // unsigned char temp[2048];
+    // unsigned char name[62];
+    // path.separate(temp, name);
+    // std::cout<<"path: "<<temp<<std::endl;
+    // std::cout<<"name: "<<name<<std::endl;
+
+    // std::time_t time = std::time(nullptr);
+    // std::cout<<time<<std::endl;
+    // std::cout<< std::asctime(std::localtime(&time))<<std::endl;
 
     // unsigned short node_num = manager.allocate();
     // printf("%s%d", "allocated node: ", node_num);
-    Inode node = Inode(disk[16383]);
-    unsigned char temp[14];
-    node.getName(temp);
-    printf("%s\n", temp);
-    printf("%d\n", node.getRecord());
+    // std::time_t time = std::time(nullptr);
 
-    unsigned char addr[3];
-    for(unsigned short iter = node.begin(); iter < node.end(); iter=node.next(iter)) {
-        node.getAddress(iter, addr);
-        std::cout<<addressToShort(addr)<<" ";
-    }
+    // Inode node = Inode(disk[16381]);
+    // std::time_t time = node.getCtime();
+    // std::cout<<time<<std::endl;
+    // std::cout<< std::asctime(std::localtime(&time))<<std::endl;
+    
+    // Inode node = Inode(disk[16383]);
+    // unsigned char temp[14];
+    // node.getName(temp);
+    // printf("%s\n", temp);
+
+    // printf("%d\n", node.getRecord());
+
+    // unsigned char addr[2];
+    // for(unsigned short iter = node.begin(); iter < node.end(); iter=node.next(iter)) {
+    //     node.getAddress(iter, addr);
+    //     std::cout<<byteToShort(addr)<<" ";
+    // }
 
     // unsigned short num = 64;
     // unsigned char temp[3];

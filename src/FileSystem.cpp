@@ -22,7 +22,7 @@ void FileSystem::initialize() {
     root_node.setIsDir(true);
 
     unsigned short dir_node_num = manager.allocate();
-    Directory dir_node = Directory(disk[dir_node_num]);
+    Directory dir_node = Directory(disk[dir_node_num], manager);
     dir_node.initialize();
 
     unsigned char entry_num[2];
@@ -58,7 +58,7 @@ bool FileSystem::changeDir(unsigned char* des) {
         Inode curr_node = Inode(disk[dir], manager);
         for (auto node_iter = curr_node.begin(); node_iter < curr_node.end(); node_iter = curr_node.next(node_iter)) {
             curr_node.getAddress(node_iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)]);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, name);
                 if(strcmp((char*)path_name, (char*)name) == 0) {
@@ -122,7 +122,7 @@ void FileSystem::createDir(unsigned char* des) {
         unsigned char temp[2];
         for (auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
             dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)]);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, entry_name);
                 if(strcmp((char*)name, (char*)entry_name) == 0) {
@@ -140,7 +140,7 @@ void FileSystem::createDir(unsigned char* des) {
         unsigned char entry[64];
         for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
             dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)]);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
             if(curr_dir.getRecord() >= 15) {
                 continue;
             }
@@ -161,7 +161,8 @@ void FileSystem::createDir(unsigned char* des) {
                 curr_dir.appendEntry(entry);
 
                 unsigned short new_dir_num = manager.allocate();
-                Directory new_dir = Directory(disk[new_dir_num]);
+                Directory new_dir = Directory(disk[new_dir_num], manager);
+                new_dir.initialize();
                 shortToByte(new_dir_num, temp);
                 new_node.appendAddress(temp);
 
@@ -193,7 +194,7 @@ void FileSystem::createDir(unsigned char* des) {
         }
         else {
             unsigned short dir_node_dir_num = manager.allocate();
-            Directory dir_node_dir = Directory(disk[dir_node_dir_num]);
+            Directory dir_node_dir = Directory(disk[dir_node_dir_num], manager);
             dir_node_dir.initialize();
             shortToByte(dir_node_dir_num, temp);
             dir_node.appendAddress(temp);
@@ -214,7 +215,10 @@ void FileSystem::createDir(unsigned char* des) {
             dir_node_dir.appendEntry(entry);
 
             unsigned short new_dir_num = manager.allocate();
-            Directory new_dir = Directory(disk[new_dir_num]);
+            Directory new_dir = Directory(disk[new_dir_num], manager);
+            new_dir.initialize();
+            shortToByte(new_dir_num, temp);
+            new_node.appendAddress(temp);
 
             shortToByte(node_num, temp);
             entry[0] = temp[0];
@@ -236,13 +240,112 @@ void FileSystem::createDir(unsigned char* des) {
     }
 }
 
+void FileSystem::deleteDir(unsigned char* des) {
+    // change path 会检查路径是否存在
+    // change 成功后还需要检查是否是当前working directory
+    // 然后检查要删除的项目在当前文件夹是否存在
+    // 找到对应的directory并从中删除entry
+    // 如果这个directory node空了, 就从inode中删除 (指定iter删除)
+
+    unsigned short dir_backup = dir;
+    Path syspath(des);
+    if(syspath.isRoot()) {
+        std::cout<<"Permission Denied: You can not delete the root directory"<<std::endl;
+        return;
+    }
+    unsigned char path[2048];
+    unsigned char name[62];
+    unsigned char entry_name[62];
+    syspath.separate(path, name);
+
+    if(!changeDir(path)) {
+        return;
+    }
+    else {
+        bool find = false;
+        unsigned short aim_iter;
+        unsigned short aim_dir_iter;
+        unsigned char temp[2];
+        Inode dir_node = Inode(disk[dir], manager);
+
+        for (auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
+            dir_node.getAddress(iter, temp);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+            for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+                curr_dir.getName(dir_iter, entry_name);
+                if(strcmp((char*)name, (char*)entry_name) == 0) {
+                    curr_dir.getNum(dir_iter, temp);
+                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    if(curr_node.isDir()) {
+                        find = true;
+                        aim_iter = iter;
+                        aim_dir_iter = dir_iter;
+                        break;
+                    }
+                }
+            }
+            if(find) {
+                break;
+            }
+        }
+
+        if(find) {
+            dir_node.getAddress(aim_iter, temp);
+            unsigned short curr_dir_num = byteToShort(temp);
+            Directory curr_dir = Directory(disk[curr_dir_num], manager);
+            
+            curr_dir.getNum(aim_dir_iter, temp);
+            unsigned short aim_node = byteToShort(temp);
+            if(dir_backup == aim_node) {
+                std::cout<<"you can not delete the working directory"<<std::endl;
+                dir = dir_backup;
+                return;
+            }
+
+            unsigned short last_iter = dir_node.begin();
+            for (last_iter; dir_node.next(last_iter) < dir_node.end(); last_iter = dir_node.next(last_iter)) {}
+            dir_node.getAddress(last_iter, temp);
+            unsigned short last_dir_num = byteToShort(temp);
+            Directory last_dir = Directory(disk[last_dir_num], manager);
+            unsigned short last_dir_iter = last_dir.begin();
+            for(last_dir_iter; last_dir.next(last_dir_iter) < last_dir.end(); last_dir_iter = last_dir.next(last_dir_iter)) {}
+
+            if((last_iter == aim_iter) && (last_dir_iter == aim_dir_iter)) {
+                curr_dir.deleteEntry(aim_dir_iter);
+                if(curr_dir.getRecord() == 0) {
+                    dir_node.deleteAddress(aim_iter);
+                }
+            }
+            else {
+                unsigned char entry[64];
+                last_dir.getEntry(last_dir_iter, entry);
+                last_dir.removeEntry(last_dir_iter);
+                if(last_dir.getRecord() == 0) {
+                    dir_node.deleteAddress(last_iter);
+                }
+                curr_dir.deleteEntry(aim_dir_iter);
+                curr_dir.appendEntry(entry);
+            }
+            
+            dir = dir_backup;
+        }
+        else {
+            std::cout<<"Can not delete, folder not exists"<<std::endl;
+            dir = dir_backup;
+            return;
+        }
+    }
+}
+
+
+
 void FileSystem::listDir() {
     Inode node = Inode(disk[dir], manager);
     unsigned char temp[2];
     unsigned char name[62];
     for (auto iter = node.begin(); iter < node.end(); iter = node.next(iter)) {
         node.getAddress(iter, temp);
-        Directory directory = Directory(disk[byteToShort(temp)]);
+        Directory directory = Directory(disk[byteToShort(temp)], manager);
         for (auto dir_iter = directory.begin(); dir_iter < directory.end(); dir_iter = directory.next(dir_iter)) {
             directory.getName(dir_iter, name);
             std::cout<<name<<"  ";
@@ -265,7 +368,7 @@ void FileSystem::getPath(unsigned char* path) {
         Inode curr_node = Inode(disk[curr], manager);
         auto iter = curr_node.begin();
         curr_node.getAddress(iter, temp);
-        Directory curr_dir = Directory(disk[byteToShort(temp)]);
+        Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
         iter = curr_dir.begin();
         iter = curr_dir.next(iter);
         curr_dir.getNum(iter, temp);
