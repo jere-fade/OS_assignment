@@ -1,12 +1,14 @@
 # structure
 
 ```
-            -------
-           | shell |
-    --------------------
-    |    File Utility   |
-----------------------------
-|    Free Block Manager     |
+               -------
+              | shell |
+        --------------------
+        |    File Utility   |
+    -----------------------------------
+    |     inode, indirect, directory   |
+----------------------------------------------
+|           Free Block Manager               |
 ```
 
 # inode
@@ -37,8 +39,8 @@ Directory Entry (15 entries total)
 
 ```
 Attribute (4 bytes total)
-|record_num |
-|2 bytes ---|
+|record_num |isDir     |
+|2 bytes ---|1 byte ---|
 ---------------
 Block Number
 510 block addresses, each 2 bytes
