@@ -2,11 +2,11 @@
 #include <string.h>
 #include <iostream>
 
-Path::Path(unsigned char* raw_path) {
+Path::Path(char* raw_path) {
     depth = 0;
     relative = true;
     unsigned short name_length = 0;
-    size_t length = strlen((char*)raw_path);
+    size_t length = strlen(raw_path);
     if(length == 0) {
         std::cout<<"[ERROR] path can not be empty!"<<std::endl;
         exit(1);
@@ -36,7 +36,7 @@ Path::Path(unsigned char* raw_path) {
     }
 } 
 
-void Path::getPath(unsigned short iter, unsigned char* name) {
+void Path::getPath(unsigned short iter, char* name) {
     for (int i = 0; i < 62; i++) {
         name[i] = path[iter][i];
     }
@@ -47,7 +47,7 @@ bool Path::isRelative() {
 }
 
 bool Path::isRoot() {
-    if (depth == 0 && strlen((char*)path[0]) == 0) {
+    if (depth == 0 && strlen(path[0]) == 0) {
         return true;
     }
     else {
@@ -67,10 +67,10 @@ unsigned short Path::next(unsigned short iter) {
     return iter+1;
 } 
 
-void Path::separate(unsigned char* path, unsigned char* name) {
+void Path::separate(char* path, char* name) {
     int path_count = 0;
     int name_count = 0;
-    unsigned char temp[62];
+    char temp[62];
     if(isRoot()) {
         path[0] = '/';
         path[1] = '\0';
@@ -90,13 +90,13 @@ void Path::separate(unsigned char* path, unsigned char* name) {
                 path_count++; 
             }
             if(next(iter) == end()) {
-                for(size_t k = 0; k < strlen((char*)temp); k++) {
+                for(size_t k = 0; k < strlen(temp); k++) {
                     name[name_count] = temp[k];
                     name_count++;
                 }
                 break;
             }
-            for(size_t i = 0; i < strlen((char*)temp); i++) {
+            for(size_t i = 0; i < strlen(temp); i++) {
                 path[path_count] = temp[i];
                 path_count++;
             }
