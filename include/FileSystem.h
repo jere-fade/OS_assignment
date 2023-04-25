@@ -6,12 +6,15 @@ class FileSystem {
 public: 
     FileSystem(unsigned char**);
     void initialize();
-    bool changeDir(unsigned char* des);
-    void getPath(unsigned char* path);
-    void createDir(unsigned char* des);
-    void deleteDir(unsigned char* des);
-    void listDir();
+    bool changeDir(char* des);
+    void getPath(char* path);
+    void createDir(char* des);
+    void deleteDir(char* des);
+    void createFile(char* des, unsigned short size);
+    void deleteFile(char* des);
+    void listDir(char* parameter);
 private:
+    void fillFile(unsigned short block_num);
     unsigned char** disk;
     BlockManager manager;
     unsigned short dir;
