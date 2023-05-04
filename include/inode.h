@@ -2,7 +2,9 @@
 #define INODE_H
 #include "indirect.h"
 #include "BlockManager.h"
+#include "utils.h"
 #include <ctime>
+#include <iterator>
 
 struct inodeMeta {
     unsigned short name_start;
@@ -25,13 +27,43 @@ public:
     void setCtime(std::time_t);
     std::time_t getCtime();
     void appendAddress(unsigned char*);
-    void deleteAddress(unsigned short);
-    void getAddress(unsigned short, unsigned char*);
-    unsigned short begin();
-    unsigned short end();
-    unsigned short next(unsigned short);
+    // unsigned short next(unsigned short);
     void free();
     
+    class iterator: public std::iterator<
+        std::input_iterator_tag,
+        unsigned short,
+        unsigned short,
+        const unsigned short*,
+        unsigned short> {
+            unsigned short it;
+        public:
+            iterator(unsigned short _it = 100) :it(_it) {}
+            iterator& operator++() {
+                it+=2;
+                return *this;
+            }
+            iterator operator++(int) {
+                iterator retval = *this;
+                ++(*this);
+                return retval;
+            }
+            bool operator==(iterator other) { return it == other.it; }
+            bool operator!=(iterator other) { return it != other.it; }
+            reference operator*() const {return it;}
+            unsigned short value(Inode* p) {
+                unsigned char temp[2];
+                temp[0] = p -> block[it];
+                temp[1] = p -> block[it+1];
+                return byteToShort(temp);
+            }
+        };
+
+    iterator begin();
+    iterator end();
+    iterator next(iterator);
+    void deleteAddress(iterator);
+    void getAddress(iterator, unsigned char*);
 private:
     void setRecord(unsigned short);
     unsigned short getRecord();

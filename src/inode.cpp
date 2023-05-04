@@ -117,9 +117,9 @@ void Inode::appendAddress(unsigned char* addr) {
 
 }
 
-void Inode::deleteAddress(unsigned short iter) {
+void Inode::deleteAddress(iterator iter) {
     
-    if (iter < meta.start + 10*2) {
+    if (*iter < meta.start + 10*2) {
         unsigned char num_temp[2];
         getAddress(iter, num_temp);
         if(isDir()) {
@@ -142,10 +142,10 @@ void Inode::deleteAddress(unsigned short iter) {
             unsigned short indir_num = byteToShort(temp);
             Indirect indirect = Indirect(manager.disk[indir_num], manager);           
             unsigned short indir_iter = indirect.begin();
-            for(indir_iter; next(indir_iter) < indirect.end(); indir_iter = indirect.next(indir_iter)) {}
+            for(indir_iter; indirect.next(indir_iter) < indirect.end(); indir_iter = indirect.next(indir_iter)) {}
             indirect.getAddress(indir_iter, addr);
-            block[iter] = addr[0];
-            block[iter+1] = addr[1];
+            block[*iter] = addr[0];
+            block[*iter+1] = addr[1];
             indirect.removeAddress(indir_iter);
             if(indirect.getRecord() == 0) {
                 setRecord(getRecord()-1);
@@ -153,11 +153,11 @@ void Inode::deleteAddress(unsigned short iter) {
             }
         }
         else {
-            unsigned short curr = iter;
-            unsigned short nextone = next(curr);
-            for(nextone; nextone < end(); nextone = next(nextone)) {
-                block[curr] = block[nextone];
-                block[curr+1] = block[nextone+1];
+            iterator curr = iter;
+            iterator nextone = next(curr);
+            for(nextone; nextone != end(); nextone++) {
+                block[*curr] = block[*nextone];
+                block[*curr+1] = block[*nextone+1];
                 curr = next(curr);
             }
             setRecord(getRecord()-1);
@@ -170,7 +170,7 @@ void Inode::deleteAddress(unsigned short iter) {
         temp[1] = block[pos+1];
         unsigned short indir_num = byteToShort(temp);
         Indirect indirect = Indirect(manager.disk[indir_num], manager);
-        unsigned short converted = iter - (meta.start + 10*2) + indirect.begin();
+        unsigned short converted = *iter - (meta.start + 10*2) + indirect.begin();
         indirect.deleteAddress(converted);
         if(indirect.getRecord() == 0) {
             setRecord(getRecord()-1);
@@ -179,11 +179,11 @@ void Inode::deleteAddress(unsigned short iter) {
     }
 }
 
-void Inode::getAddress(unsigned short iter, unsigned char* addr) {
+void Inode::getAddress(Inode::iterator iter, unsigned char* addr) {
 
-    if(iter < meta.start + 10*2) {
-        addr[0] = block[iter];
-        addr[1] = block[iter+1];
+    if(*iter < meta.start + 10*2) {
+        addr[0] = block[*iter];
+        addr[1] = block[*iter+1];
     }
     else {
         unsigned char temp[2];
@@ -191,41 +191,44 @@ void Inode::getAddress(unsigned short iter, unsigned char* addr) {
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         Indirect indirect = Indirect(manager.disk[byteToShort(temp)], manager);
-        unsigned short converted = iter - (meta.start + 10*2) + indirect.begin();
+        unsigned short converted = *iter - (meta.start + 10*2) + indirect.begin();
         indirect.getAddress(converted, addr);
     }
 
 }
 
-unsigned short Inode::begin() {
-    return meta.start;
+Inode::iterator Inode::begin() {
+    return iterator(meta.start);
 } 
 
-unsigned short Inode::end() {
+Inode::iterator Inode::end() {
     if(getRecord() >= 11) {
         unsigned char temp[2];
         unsigned short pos = meta.start + 10 * 2;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         Indirect indirect = Indirect(manager.disk[byteToShort(temp)], manager);
-        return meta.start + 10 * 2 + indirect.end() - indirect.begin();
+        return iterator(meta.start + 10 * 2 + indirect.end() - indirect.begin());
     }
     else {
-        return meta.start + getRecord() * 2;
+        return iterator(meta.start + getRecord() * 2);
     }
 }
 
-unsigned short Inode::next(unsigned short iter) {
-    return iter + 2;
+Inode::iterator Inode::next(Inode::iterator i) {
+    return i++;
 }
+
+// unsigned short Inode::next(unsigned short iter) {
+//     return iter + 2;
+// }
 
 void Inode::free() {
     bool has_indirect = (getRecord() >= 11? true: false);
     unsigned char temp[2];
     if(isDir()) {
-        for (auto iter = begin(); iter < end(); iter = next(iter)) {
-            getAddress(iter, temp);
-            unsigned short dir_num = byteToShort(temp);
+        for (auto iter = begin(); iter != end(); iter++) {
+            unsigned short dir_num = iter.value(this);
             Directory directory = Directory(manager.disk[dir_num], manager);
             directory.free();
             manager.free(dir_num);
@@ -233,9 +236,8 @@ void Inode::free() {
 
     }
     else {
-        for (auto iter = begin(); iter < end(); iter = next(iter)) {
-            getAddress(iter, temp);
-            manager.free(byteToShort(temp));
+        for (auto iter = begin(); iter != end(); iter++) {
+            manager.free(iter.value(this));
         }
     }
 

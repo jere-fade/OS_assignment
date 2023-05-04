@@ -64,16 +64,15 @@ bool FileSystem::changeDir(char* des) {
     for (auto path_iter = path.begin(); path_iter < path.end(); path_iter = path.next(path_iter)) {
         path.getPath(path_iter, path_name);
         Inode curr_node = Inode(disk[dir], manager);
-        for (auto node_iter = curr_node.begin(); node_iter < curr_node.end(); node_iter = curr_node.next(node_iter)) {
-            curr_node.getAddress(node_iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for (auto node_iter = curr_node.begin(); node_iter != curr_node.end(); node_iter++) {
+            Directory curr_dir = Directory(disk[node_iter.value(&curr_node)], manager);
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)name);
                 if(strcmp(path_name, name) == 0) {
                     curr_dir.getNum(dir_iter, temp);
                     unsigned short node_num = byteToShort(temp);
-                    Inode curr_node = Inode(disk[node_num], manager);
-                    if(curr_node.isDir()) {
+                    Inode next_node = Inode(disk[node_num], manager);
+                    if(next_node.isDir()) {
                         match = true;
                         dir = node_num;
                         break;
@@ -141,9 +140,8 @@ void FileSystem::createDir(char* des) {
         Inode dir_node = Inode(disk[dir], manager);
         // 查找是否存在重名文件夹
         unsigned char temp[2];
-        for (auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
@@ -162,9 +160,8 @@ void FileSystem::createDir(char* des) {
         }
         // 确认无重名文件夹后插入
         unsigned char entry[64];
-        for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             if(curr_dir.getRecord() >= 15) {
                 continue;
             }
@@ -293,14 +290,13 @@ void FileSystem::deleteDir(char* des) {
     }
     else {
         bool find = false;
-        unsigned short aim_iter;
+        Inode::iterator aim_iter;
         unsigned short aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
-        for (auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
@@ -337,8 +333,8 @@ void FileSystem::deleteDir(char* des) {
                 return;
             }
 
-            unsigned short last_iter = dir_node.begin();
-            for (last_iter; dir_node.next(last_iter) < dir_node.end(); last_iter = dir_node.next(last_iter)) {}
+            Inode::iterator last_iter = dir_node.begin();
+            for (last_iter; dir_node.next(last_iter) != dir_node.end(); last_iter++) {}
             dir_node.getAddress(last_iter, temp);
             unsigned short last_dir_num = byteToShort(temp);
             Directory last_dir = Directory(disk[last_dir_num], manager);
@@ -403,9 +399,8 @@ void FileSystem::createFile(char* des, unsigned short size) {
         Inode dir_node = Inode(disk[dir], manager);
 
         unsigned char temp[2];
-        for (auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
@@ -424,9 +419,8 @@ void FileSystem::createFile(char* des, unsigned short size) {
         }
 
         unsigned char entry[64];
-        for (auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             if(curr_dir.getRecord() >= 15) {
                 continue;
             }
@@ -523,14 +517,13 @@ void FileSystem::deleteFile(char* des) {
     else {
         bool find = false;
         bool findFolder = false;
-        unsigned short aim_iter;
+        Inode::iterator aim_iter;
         unsigned short aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
-        for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
@@ -564,8 +557,8 @@ void FileSystem::deleteFile(char* des) {
             curr_dir.getNum(aim_dir_iter, temp);
             // unsigned short aim_node = byteToShort(temp);
 
-            unsigned short last_iter = dir_node.begin();
-            for(last_iter; dir_node.next(last_iter) < dir_node.end(); last_iter = dir_node.next(last_iter)) {}
+            Inode::iterator last_iter = dir_node.begin();
+            for(last_iter; dir_node.next(last_iter) != dir_node.end(); last_iter++) {}
             dir_node.getAddress(last_iter, temp);
             unsigned short last_dir_num = byteToShort(temp);
             Directory last_dir = Directory(disk[last_dir_num], manager);
@@ -631,14 +624,13 @@ void FileSystem::concatenate(char* des) {
     }
     else {
         bool find = false;
-        unsigned short aim_iter;
+        Inode::iterator aim_iter;
         unsigned short aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
-        for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
@@ -668,9 +660,8 @@ void FileSystem::concatenate(char* des) {
             curr_dir.getNum(aim_dir_iter, temp);
             Inode aim_node = Inode(disk[byteToShort(temp)], manager);
 
-            for(auto iter = aim_node.begin(); iter < aim_node.end(); iter = aim_node.next(iter)) {
-                aim_node.getAddress(iter, temp);
-                unsigned char* curr_block = disk[byteToShort(temp)];
+            for(auto iter = aim_node.begin(); iter != aim_node.end(); iter++) {
+                unsigned char* curr_block = disk[iter.value(&aim_node)];
                 std::cout<<curr_block;
             }
             std::cout<<std::endl;
@@ -719,14 +710,13 @@ void FileSystem::copyFile(char* src, char* des) {
     else {
         bool find = false;
         bool findFolder = false;
-        unsigned short aim_iter;
+        Inode::iterator aim_iter;
         unsigned short aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
-        for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
-            dir_node.getAddress(iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
+            Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
             for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
@@ -793,9 +783,8 @@ void FileSystem::copyFile(char* src, char* des) {
             }
             else {
                 Inode des_dir_node = Inode(disk[dir], manager);
-                for(auto iter = des_dir_node.begin(); iter < des_dir_node.end(); iter = des_dir_node.next(iter)) {
-                    des_dir_node.getAddress(iter, temp);
-                    Directory des_curr_dir = Directory(disk[byteToShort(temp)], manager);
+                for(auto iter = des_dir_node.begin(); iter != des_dir_node.end(); iter++) {
+                    Directory des_curr_dir = Directory(disk[iter.value(&des_dir_node)], manager);
                     for(auto dir_iter = des_curr_dir.begin(); dir_iter < des_curr_dir.end(); dir_iter = des_curr_dir.next(dir_iter)) {
                         des_curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                         if(strcmp(name, entry_name) == 0) {
@@ -806,9 +795,8 @@ void FileSystem::copyFile(char* src, char* des) {
                     }
                 }
                 unsigned char entry[64];
-                for(auto iter = des_dir_node.begin(); iter < des_dir_node.end(); iter = des_dir_node.next(iter)) {
-                    des_dir_node.getAddress(iter, temp);
-                    Directory des_curr_dir = Directory(disk[byteToShort(temp)], manager);
+                for(auto iter = des_dir_node.begin(); iter != des_dir_node.end(); iter++) {
+                    Directory des_curr_dir = Directory(disk[iter.value(&des_dir_node)], manager);
                     if(des_curr_dir.getRecord() >= 15) {
                         continue;
                     }
@@ -828,10 +816,9 @@ void FileSystem::copyFile(char* src, char* des) {
                         entry[2+i] = '\0';
                         des_curr_dir.appendEntry(entry);
 
-                        for(auto node_iter = src_node.begin(); node_iter < src_node.end(); node_iter = src_node.next(node_iter)) {
+                        for(auto node_iter = src_node.begin(); node_iter != src_node.end(); node_iter++) {
                             unsigned short block_num = manager.allocate();
-                            src_node.getAddress(node_iter, temp);
-                            disk[block_num] = disk[byteToShort(temp)];
+                            disk[block_num] = disk[node_iter.value(&src_node)];
                             shortToByte(block_num, temp);
                             des_node.appendAddress(temp);
                         }
@@ -868,10 +855,9 @@ void FileSystem::copyFile(char* src, char* des) {
                     entry[2+i] = '\0';
                     dir_node_dir.appendEntry(entry);
 
-                    for(auto node_iter = src_node.begin(); node_iter < src_node.end(); node_iter = src_node.next(node_iter)) {
+                    for(auto node_iter = src_node.begin(); node_iter != src_node.end(); node_iter++) {
                         unsigned short block_num = manager.allocate();
-                        src_node.getAddress(node_iter, temp);
-                        disk[block_num] = disk[byteToShort(temp)];
+                        disk[block_num] = disk[node_iter.value(&src_node)];
                         shortToByte(block_num, temp);
                         des_node.appendAddress(temp);
                     }
@@ -903,9 +889,8 @@ void FileSystem::listDir(char* parameter) {
     Inode node = Inode(disk[dir], manager);
     unsigned char temp[2];
     char name[62];
-    for (auto iter = node.begin(); iter < node.end(); iter = node.next(iter)) {
-        node.getAddress(iter, temp);
-        Directory directory = Directory(disk[byteToShort(temp)], manager);
+    for (auto iter = node.begin(); iter != node.end(); iter++) {
+        Directory directory = Directory(disk[iter.value(&node)], manager);
         for (auto dir_iter = directory.begin(); dir_iter < directory.end(); dir_iter = directory.next(dir_iter)) {
             directory.getNum(dir_iter, temp);
             Inode curr_node = Inode(disk[byteToShort(temp)], manager);
@@ -969,9 +954,9 @@ void FileSystem::getPath(char* path) {
         auto iter = curr_node.begin();
         curr_node.getAddress(iter, temp);
         Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
-        iter = curr_dir.begin();
-        iter = curr_dir.next(iter);
-        curr_dir.getNum(iter, temp);
+        auto dir_iter = curr_dir.begin();
+        dir_iter = curr_dir.next(dir_iter);
+        curr_dir.getNum(dir_iter, temp);
         curr = byteToShort(temp);
         count++;
     }
