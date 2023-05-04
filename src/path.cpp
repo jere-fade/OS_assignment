@@ -30,6 +30,10 @@ Path::Path(char* raw_path) {
                 path[depth][name_length] = '\0';
                 depth++;
                 name_length = 0;
+                if ( i == length - 1) {
+                    path[depth][name_length] = '.';
+                    name_length++;
+                }
             }
         }
         path[depth][name_length] = '\0';

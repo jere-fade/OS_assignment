@@ -109,7 +109,7 @@ bool FileSystem::changeDir(char* des) {
         // }
     }
     else {
-        std::cout << "Can not find path" << std::endl;
+        // std::cout << "Can not find path" << std::endl;
         dir = dir_backup;
         return false;
     }
@@ -134,6 +134,7 @@ void FileSystem::createDir(char* des) {
     }
 
     if(!changeDir(path)) {
+        std::cout<<"Can not fine path"<<std::endl;
         return;
     }
     else {
@@ -147,6 +148,8 @@ void FileSystem::createDir(char* des) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
                     std::cout<<"Can not create folder: folder/file having the same name already exists"<<std::endl;
+                    dir = dir_backup;
+                    return;
                     // curr_dir.getNum(dir_iter, temp);
                     // Inode curr_node = Inode(disk[byteToShort(temp)], manager);
                     // if(curr_node.isDir()) {
@@ -285,6 +288,7 @@ void FileSystem::deleteDir(char* des) {
     }
 
     if(!changeDir(path)) {
+        std::cout<<"Can not fine path"<<std::endl;
         return;
     }
     else {
@@ -392,6 +396,7 @@ void FileSystem::createFile(char* des, unsigned short size) {
     }
 
     if(!changeDir(path)) {
+        std::cout<<"Can not find path"<<std::endl;
         return;
     }
     else {
@@ -512,6 +517,7 @@ void FileSystem::deleteFile(char* des) {
     }
 
     if(!changeDir(path)) {
+        std::cout<<"Can not find path"<<std::endl;
         return;
     }
     else {
@@ -620,6 +626,7 @@ void FileSystem::concatenate(char* des) {
     }
 
     if(!changeDir(path)) {
+        std::cout<<"Can not find path"<<std::endl;
         return;
     }
     else {
@@ -706,6 +713,7 @@ void FileSystem::copyFile(char* src, char* des) {
     }
 
     if(!changeDir(path)) {
+        std::cout<<"Can not find path"<<std::endl;
         return;
     }
     else {
@@ -742,6 +750,7 @@ void FileSystem::copyFile(char* src, char* des) {
         }
 
         if(find) {
+            dir = dir_backup;
             dir_node.getAddress(aim_iter, temp);
             Directory curr_dir = Directory(disk[byteToShort(temp)], manager); 
             curr_dir.getNum(aim_dir_iter, temp);
@@ -756,16 +765,30 @@ void FileSystem::copyFile(char* src, char* des) {
             for(int i = 0; i < strlen(entry_name); i++) {
                 entry_name[i] = '\0';
             }
-            Des.separate(path, name);
 
-            if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
-                std::cout<<"Can not copy: destination file name can not be . or .."<<std::endl;
-                dir = dir_backup;
-                return;
+            bool changeName = true;
+            bool pathExist = true;
+
+            if(changeDir(des)) {
+                changeName = false;  
+                src_node.getName((unsigned char*)name);
+            }
+            else {
+                Des.separate(path, name);
+                if(!changeDir(path)) {
+                    pathExist = false;
+                }
             }
 
-            if(!changeDir(path)) {
-                dir = dir_backup;
+
+            // if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+            //     std::cout<<"Can not copy: destination file name can not be . or .."<<std::endl;
+            //     dir = dir_backup;
+            //     return;
+            // }
+
+            if(!pathExist) {
+                std::cout<<"Can not find path"<<std::endl;
                 return;
             }
             else {
