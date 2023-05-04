@@ -6,8 +6,13 @@
 #include "constant.h"
 #include "string.h"
 #include <iostream>
+#include <iomanip>
 #include <stdlib.h>
+#include <vector>
 #include <ctime>
+#include <cmath>
+#include <chrono>
+#include <thread>
 
 FileSystem::FileSystem(unsigned char** disk) {
     this->disk = disk;
@@ -65,10 +70,17 @@ bool FileSystem::changeDir(char* des) {
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)name);
                 if(strcmp(path_name, name) == 0) {
-                    match = true;
                     curr_dir.getNum(dir_iter, temp);
-                    dir = byteToShort(temp);
-                    break;
+                    unsigned short node_num = byteToShort(temp);
+                    Inode curr_node = Inode(disk[node_num], manager);
+                    if(curr_node.isDir()) {
+                        match = true;
+                        dir = node_num;
+                        break;
+                    }
+                    else {
+                        continue;
+                    }
                 }
             }
             if(match) {
@@ -86,15 +98,15 @@ bool FileSystem::changeDir(char* des) {
     }
 
     if(match_whole) {
-        Inode curr_node = Inode(disk[dir], manager);
-        if(!curr_node.isDir()) {
-            std::cout << "destination is not a folder" <<std::endl;
-            dir = dir_backup;
-            return false;
-        }
-        else {
+        // Inode curr_node = Inode(disk[dir], manager);
+        // if(!curr_node.isDir()) {
+        //     std::cout << "destination is not a folder" <<std::endl;
+        //     dir = dir_backup;
+        //     return false;
+        // }
+        // else {
             return true;
-        }
+        // }
     }
     else {
         std::cout << "Can not find path" << std::endl;
@@ -134,13 +146,14 @@ void FileSystem::createDir(char* des) {
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
-                    if(curr_node.isDir()) {
-                        std::cout<<"Can not create folder: folder already exists"<<std::endl;
-                        dir = dir_backup;
-                        return;
-                    }
+                    std::cout<<"Can not create folder: folder/file having the same name already exists"<<std::endl;
+                    // curr_dir.getNum(dir_iter, temp);
+                    // Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    // if(curr_node.isDir()) {
+                    //     std::cout<<"Can not create folder: folder already exists"<<std::endl;
+                    //     dir = dir_backup;
+                    //     return;
+                    // }
                 }
             }
         }
@@ -296,7 +309,7 @@ void FileSystem::deleteDir(char* des) {
                         break;
                     }
                     else {
-                        std::cout<<"Can not delete folder: "<<name<<" is a file"<<std::endl;
+                        deleteFile(des);
                         dir = dir_backup;
                         return;
                     }
@@ -391,13 +404,16 @@ void FileSystem::createFile(char* des, unsigned short size) {
             for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
-                    if(!curr_node.isDir()) {
-                        std::cout<<"Can not create file: file already exists"<<std::endl;
-                        dir = dir_backup;
-                        return;
-                    }
+                    std::cout<<"Can not create file: folder/file having the same name already exists"<<std::endl;
+                    dir = dir_backup;
+                    return;
+                    // curr_dir.getNum(dir_iter, temp);
+                    // Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    // if(!curr_node.isDir()) {
+                    //     std::cout<<"Can not create file: file already exists"<<std::endl;
+                    //     dir = dir_backup;
+                    //     return;
+                    // }
                 }
             }
         }
@@ -500,6 +516,7 @@ void FileSystem::deleteFile(char* des) {
     }
     else {
         bool find = false;
+        bool findFolder = false;
         unsigned short aim_iter;
         unsigned short aim_dir_iter;
         unsigned char temp[2];
@@ -520,9 +537,11 @@ void FileSystem::deleteFile(char* des) {
                         break;
                     }
                     else {
-                        std::cout<<"Can not delete file: "<<name<<" is a folder"<<std::endl;
-                        dir = dir_backup;
-                        return;
+                        findFolder = true;
+                        continue;
+                        // std::cout<<"Can not delete file: "<<name<<" is a folder"<<std::endl;
+                        // dir = dir_backup;
+                        // return;
                     }
                 }
             }
@@ -537,7 +556,7 @@ void FileSystem::deleteFile(char* des) {
             Directory curr_dir = Directory(disk[curr_dir_num], manager);
 
             curr_dir.getNum(aim_dir_iter, temp);
-            unsigned short aim_node = byteToShort(temp);
+            // unsigned short aim_node = byteToShort(temp);
 
             unsigned short last_iter = dir_node.begin();
             for(last_iter; dir_node.next(last_iter) < dir_node.end(); last_iter = dir_node.next(last_iter)) {}
@@ -566,6 +585,11 @@ void FileSystem::deleteFile(char* des) {
 
             dir = dir_backup;
         }
+        else if(findFolder) {
+            std::cout<<"Can not delete file: "<<name<<" is a folder"<<std::endl;
+            dir = dir_backup;
+            return;
+        }
         else {
             std::cout<<"Can not delete file: file not exists"<<std::endl;
             dir = dir_backup;
@@ -574,6 +598,278 @@ void FileSystem::deleteFile(char* des) {
 
     }
 
+}
+
+void FileSystem::concatenate(char* des) {
+    unsigned short dir_backup = dir;
+    
+    Path syspath(des);
+    if(syspath.isRoot()) {
+        std::cout<<"Can not cat: file name empty"<<std::endl;
+        return;
+    }
+    
+    char path[2048];
+    char name[62];
+    char entry_name[62];
+    syspath.separate(path, name);
+
+    if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+        std::cout<<"Can not cat: can not cat . or .."<<std::endl;
+        return;
+    }
+
+    if(!changeDir(path)) {
+        return;
+    }
+    else {
+        bool find = false;
+        unsigned short aim_iter;
+        unsigned short aim_dir_iter;
+        unsigned char temp[2];
+        Inode dir_node = Inode(disk[dir], manager);
+
+        for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
+            dir_node.getAddress(iter, temp);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+            for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+                curr_dir.getName(dir_iter, (unsigned char*)entry_name);
+                if(strcmp(name, entry_name) == 0) {
+                    curr_dir.getNum(dir_iter, temp);
+                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    if(!curr_node.isDir()) {
+                        find = true;
+                        aim_iter = iter;
+                        aim_dir_iter = dir_iter;
+                        break;
+                    }
+                    else {
+                        std::cout<<"Can not cat: "<<name<<" is a folder"<<std::endl;
+                        dir = dir_backup;
+                        return;
+                    }
+                }
+            } 
+            if(find) {
+                break;
+            }
+        }
+
+        if(find) {
+            dir_node.getAddress(aim_iter, temp);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+            curr_dir.getNum(aim_dir_iter, temp);
+            Inode aim_node = Inode(disk[byteToShort(temp)], manager);
+
+            for(auto iter = aim_node.begin(); iter < aim_node.end(); iter = aim_node.next(iter)) {
+                aim_node.getAddress(iter, temp);
+                unsigned char* curr_block = disk[byteToShort(temp)];
+                std::cout<<curr_block;
+            }
+            std::cout<<std::endl;
+            dir = dir_backup;
+
+        }
+        else {
+            std::cout<<"Can not cat: file not exists"<<std::endl;
+            dir = dir_backup;
+            return;
+        }
+    }
+
+}
+
+void FileSystem::copyFile(char* src, char* des) {
+    // 1. change path to src, get the inode
+    // 检查是否存在
+    // 2. change path to des, create file
+    // 检查重复文件
+
+    unsigned short dir_backup = dir;
+
+    Path Src(src);
+    Path Des(des);
+
+    if(Src.isRoot() || Des.isRoot()) {
+        std::cout<<"Can not copy: file name emtpy"<<std::endl;
+        return;
+    }
+
+    char path[2048];
+    char name[62];
+    char entry_name[62];
+    Src.separate(path, name);
+
+    if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+        std::cout<<"Can not copy: . or .. are not files"<<std::endl;
+        return;
+    }
+
+    if(!changeDir(path)) {
+        return;
+    }
+    else {
+        bool find = false;
+        bool findFolder = false;
+        unsigned short aim_iter;
+        unsigned short aim_dir_iter;
+        unsigned char temp[2];
+        Inode dir_node = Inode(disk[dir], manager);
+
+        for(auto iter = dir_node.begin(); iter < dir_node.end(); iter = dir_node.next(iter)) {
+            dir_node.getAddress(iter, temp);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+            for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+                curr_dir.getName(dir_iter, (unsigned char*)entry_name);
+                if(strcmp(name, entry_name) == 0) {
+                    curr_dir.getNum(dir_iter, temp);
+                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    if(!curr_node.isDir()) {
+                        find = true;
+                        aim_iter = iter;
+                        aim_dir_iter = dir_iter;
+                        break;
+                    }
+                    else {
+                        findFolder = true;
+                        continue;
+                    }
+                }
+            }
+            if(find) {
+                break;
+            }
+        }
+
+        if(find) {
+            dir_node.getAddress(aim_iter, temp);
+            Directory curr_dir = Directory(disk[byteToShort(temp)], manager); 
+            curr_dir.getNum(aim_dir_iter, temp);
+            Inode src_node = Inode(disk[byteToShort(temp)], manager);
+
+            for(int i = 0; i < strlen(path); i++) {
+                path[i] = '\0';
+            }
+            for(int i = 0; i < strlen(name); i++) {
+                name[i] = '\0';
+            }
+            for(int i = 0; i < strlen(entry_name); i++) {
+                entry_name[i] = '\0';
+            }
+            Des.separate(path, name);
+
+            if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+                std::cout<<"Can not copy: destination file name can not be . or .."<<std::endl;
+                dir = dir_backup;
+                return;
+            }
+
+            if(!changeDir(path)) {
+                dir = dir_backup;
+                return;
+            }
+            else {
+                Inode des_dir_node = Inode(disk[dir], manager);
+                for(auto iter = des_dir_node.begin(); iter < des_dir_node.end(); iter = des_dir_node.next(iter)) {
+                    des_dir_node.getAddress(iter, temp);
+                    Directory des_curr_dir = Directory(disk[byteToShort(temp)], manager);
+                    for(auto dir_iter = des_curr_dir.begin(); dir_iter < des_curr_dir.end(); dir_iter = des_curr_dir.next(dir_iter)) {
+                        des_curr_dir.getName(dir_iter, (unsigned char*)entry_name);
+                        if(strcmp(name, entry_name) == 0) {
+                            std::cout<<"Can not copy: folder/file having the same name already exists"<<std::endl;
+                            dir = dir_backup;
+                            return;
+                        }
+                    }
+                }
+                unsigned char entry[64];
+                for(auto iter = des_dir_node.begin(); iter < des_dir_node.end(); iter = des_dir_node.next(iter)) {
+                    des_dir_node.getAddress(iter, temp);
+                    Directory des_curr_dir = Directory(disk[byteToShort(temp)], manager);
+                    if(des_curr_dir.getRecord() >= 15) {
+                        continue;
+                    }
+                    else {
+                        unsigned short des_node_num = manager.allocate();
+                        Inode des_node = Inode(disk[des_node_num], manager);
+                        des_node.initialize();
+                        des_node.setName((unsigned char*)name);
+                        des_node.setIsDir(false);
+                        shortToByte(des_node_num, temp);
+                        entry[0] = temp[0];
+                        entry[1] = temp[1];
+                        size_t i = 0; 
+                        for(i; i < strlen(name); i++) {
+                            entry[2+i] = name[i];
+                        }
+                        entry[2+i] = '\0';
+                        des_curr_dir.appendEntry(entry);
+
+                        for(auto node_iter = src_node.begin(); node_iter < src_node.end(); node_iter = src_node.next(node_iter)) {
+                            unsigned short block_num = manager.allocate();
+                            src_node.getAddress(node_iter, temp);
+                            disk[block_num] = disk[byteToShort(temp)];
+                            shortToByte(block_num, temp);
+                            des_node.appendAddress(temp);
+                        }
+
+                        dir = dir_backup;
+                        return;
+                    }
+                }
+
+                if(des_dir_node.getTotalRecord() >= 520) {
+                    std::cout<<"Can not copy: destination folder is full"<<std::endl;
+                    dir = dir_backup;
+                    return;
+                }
+                else {
+                    unsigned dir_node_dir_num = manager.allocate();
+                    Directory dir_node_dir = Directory(disk[dir_node_dir_num], manager);
+                    dir_node_dir.initialize();
+                    shortToByte(dir_node_dir_num, temp);
+                    des_dir_node.appendAddress(temp);
+
+                    unsigned short des_node_num = manager.allocate();
+                    Inode des_node = Inode(disk[des_node_num], manager);
+                    des_node.initialize();
+                    des_node.setName((unsigned char*)name);
+                    des_node.setIsDir(false);
+                    shortToByte(des_node_num, temp);
+                    entry[0] = temp[0];
+                    entry[1] = temp[1];
+                    size_t i = 0;
+                    for(i; i < strlen(name); i++) {
+                        entry[2+i] = name[i];
+                    }
+                    entry[2+i] = '\0';
+                    dir_node_dir.appendEntry(entry);
+
+                    for(auto node_iter = src_node.begin(); node_iter < src_node.end(); node_iter = src_node.next(node_iter)) {
+                        unsigned short block_num = manager.allocate();
+                        src_node.getAddress(node_iter, temp);
+                        disk[block_num] = disk[byteToShort(temp)];
+                        shortToByte(block_num, temp);
+                        des_node.appendAddress(temp);
+                    }
+                    dir = dir_backup;
+                    return;
+                }
+            }
+
+        }
+        else if(findFolder) {
+            std::cout<<"Can not copy: "<<name<<" is a folder"<<std::endl;
+            dir = dir_backup;
+            return;
+        }
+        else {
+            std::cout<<"Can not copy: source file not exists"<<std::endl;
+            dir = dir_backup;
+            return;
+        }
+    }
+    
 }
 
 
@@ -613,7 +909,7 @@ void FileSystem::listDir(char* parameter) {
                         printf("%6d %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
                     }
                     else {
-                        printf("%6d %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
+                        printf("%6d %s %s%-62s%s\n", size, t, dark_green, name, default_color);
                     }
                 }
                 else {
@@ -621,7 +917,7 @@ void FileSystem::listDir(char* parameter) {
                         printf("%3dK %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
                     }
                     else {
-                        printf("%3dK %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
+                        printf("%3dK %s %s%-62s%s\n", size, t, dark_green, name, default_color);
                     }
                 }
             }
@@ -679,6 +975,64 @@ void FileSystem::getPath(char* path) {
         }
         path[char_count] = '\0';
     }
+}
+
+double f(double t) {
+    double pi = 3.14159;
+    return sin(pi/2*t);
+}
+
+void FileSystem::usage() {
+    int free = manager.listSize();
+    int used = BLOCK_NUM - free;
+    int steps = 800;
+    double step = (double) 1 / steps;
+    std::vector<double> point;
+    for (int i = 1; i <= steps; i++) {
+        point.push_back(f(step * i));
+    }
+
+    char blue[] = "\033[94m";
+    char green[] = "\033[92m";
+    char red[] = "\033[91m";
+    char magenta[] = "\033[95m";
+    char cyan[] = "\033[96m";
+    char default_color[] = "\033[0m";
+    double percent = (double) used / BLOCK_NUM;
+    printf("Free Block: %s%5d%s  Used Block: %s%5d%s  Total Block: %s%5d%s\n", green, free, default_color, red, used, default_color, blue, BLOCK_NUM, default_color);
+    std::string fill[] = {"▎", "▌", "▊", "█"};
+
+    for (int j = 0; j < point.size(); j++)
+    {
+        int barWidth = 80;
+
+        std::cout << "[";
+        int pos = barWidth * point[j] * percent * 4;
+        int floor = (pos/4)*4;
+        for (int i = 0; i < barWidth * 4; ++i)
+        {
+            if (i < floor && i%4 == 0) {
+                std::cout<<magenta;
+                std::cout<<"█";
+                std::cout<<default_color;
+            }
+            else if (i >= floor && (i == pos - 1)) {
+                std::cout<<magenta;
+                std::cout<<fill[i%4];
+                std::cout<<default_color;
+            }
+            else if (i >= pos && (i%4 == 0))
+                std::cout << " ";
+
+        }
+        std::cout << "] " << cyan <<std::fixed << std::setprecision(2) << std::setw(6) << point[j] * percent * 100 << " %\r";
+        std::cout << default_color;
+        std::cout.flush();
+
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
+    }
+    std::cout<<std::endl;
+
 }
 
 void FileSystem::fillFile(unsigned short block_num) {

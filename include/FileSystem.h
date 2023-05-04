@@ -13,6 +13,9 @@ public:
     void createFile(char* des, unsigned short size);
     void deleteFile(char* des);
     void listDir(char* parameter);
+    void concatenate(char* des);
+    void copyFile(char* src, char* des);
+    void usage();
 private:
     void fillFile(unsigned short block_num);
     unsigned char** disk;
