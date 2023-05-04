@@ -45,3 +45,7 @@ Attribute (4 bytes total)
 Block Number
 510 block addresses, each 2 bytes
 ```
+
+# 可以改进
+
+- iterator 应当返回 pointer
