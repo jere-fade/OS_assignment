@@ -24,7 +24,7 @@ void FileSystem::initialize() {
     unsigned short root_num = manager.getRootBlock();
     Inode root_node = Inode(disk[root_num], manager);
     root_node.initialize();
-    unsigned char name[62];
+    unsigned char name[Inode::meta.name_length];
     name[0] = '\0';
     root_node.setName(name);
     root_node.setIsDir(true);
@@ -35,7 +35,7 @@ void FileSystem::initialize() {
 
     unsigned char entry_num[2];
     shortToByte(root_num, entry_num);
-    unsigned char entry[64];
+    unsigned char entry[Directory::meta.entry_length];
     entry[0] = entry_num[0];
     entry[1] = entry_num[1];
     entry[2] = '.';
@@ -56,8 +56,8 @@ bool FileSystem::changeDir(char* des) {
             return true;
         }
     }
-    char path_name[62];
-    char name[62];
+    char path_name[Directory::meta.name_length];
+    char name[Directory::meta.name_length];
     unsigned char temp[2];
     bool match = false;
     bool match_whole = true;
@@ -122,8 +122,8 @@ void FileSystem::createDir(char* des) {
     }
 
     char path[2048];
-    char name[62];
-    char entry_name[62];
+    char name[Directory::meta.name_length];
+    char entry_name[Directory::meta.name_length];
     syspath.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -158,10 +158,10 @@ void FileSystem::createDir(char* des) {
             }
         }
         // 确认无重名文件夹后插入
-        unsigned char entry[64];
+        unsigned char entry[Directory::meta.entry_length];
         for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            if(curr_dir.getRecord() >= 15) {
+            if(curr_dir.getRecord() >= Directory::meta.max) {
                 continue;
             }
             else {
@@ -207,7 +207,7 @@ void FileSystem::createDir(char* des) {
         }
         // 当前已分配directory node全部装满, 需要新分配一个
 
-        if(dir_node.getTotalRecord() >= 520) {
+        if(dir_node.getTotalRecord() >= Inode::meta.direct_max + Indirect::meta.max) {
             std::cout<<"Can not create folder: destination folder is full"<<std::endl;
             dir = dir_backup;
             return;
@@ -274,8 +274,8 @@ void FileSystem::deleteDir(char* des) {
         return;
     }
     char path[2048];
-    char name[62];
-    char entry_name[62];
+    char name[Directory::meta.name_length];
+    char entry_name[Directory::meta.name_length];
     syspath.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -344,7 +344,7 @@ void FileSystem::deleteDir(char* des) {
                 }
             }
             else {
-                unsigned char entry[64];
+                unsigned char entry[Directory::meta.entry_length];
                 last_dir.getEntry(last_dir_iter, entry);
                 last_dir.removeEntry(last_dir_iter);
                 if(last_dir.getRecord() == 0) {
@@ -366,7 +366,7 @@ void FileSystem::deleteDir(char* des) {
 
 void FileSystem::createFile(char* des, unsigned short size) {
     unsigned short dir_backup = dir;
-    if(size > 520) {
+    if(size > Inode::meta.direct_max + Indirect::meta.max) {
         std::cout<<"Can not create file: file size exceeds maximum"<<std::endl;
         return;
     }
@@ -378,8 +378,8 @@ void FileSystem::createFile(char* des, unsigned short size) {
     }
 
     char path[2048];
-    char name[62];
-    char entry_name[62];
+    char name[Directory::meta.max];
+    char entry_name[Directory::meta.max];
     syspath.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -414,10 +414,10 @@ void FileSystem::createFile(char* des, unsigned short size) {
             }
         }
 
-        unsigned char entry[64];
+        unsigned char entry[Directory::meta.entry_length];
         for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            if(curr_dir.getRecord() >= 15) {
+            if(curr_dir.getRecord() >= Directory::meta.max) {
                 continue;
             }
             else {
@@ -448,7 +448,7 @@ void FileSystem::createFile(char* des, unsigned short size) {
             }
         }
 
-        if(dir_node.getTotalRecord() >= 520) {
+        if(dir_node.getTotalRecord() >= Inode::meta.direct_max + Indirect::meta.max) {
             std::cout<<"Can not create file: destination folder is full"<<std::endl;
             dir = dir_backup;
             return;
@@ -497,8 +497,8 @@ void FileSystem::deleteFile(char* des) {
     }
 
     char path[2048];
-    char name[62];
-    char entry_name[62];
+    char name[Directory::meta.name_length];
+    char entry_name[Directory::meta.name_length];
     syspath.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -565,7 +565,7 @@ void FileSystem::deleteFile(char* des) {
                 }
             }
             else {
-                unsigned char entry[64];
+                unsigned char entry[Directory::meta.entry_length];
                 last_dir.getEntry(last_dir_iter, entry);
                 last_dir.removeEntry(last_dir_iter);
                 if(last_dir.getRecord() == 0) {
@@ -602,8 +602,8 @@ void FileSystem::concatenate(char* des) {
     }
     
     char path[2048];
-    char name[62];
-    char entry_name[62];
+    char name[Directory::meta.name_length];
+    char entry_name[Directory::meta.name_length];
     syspath.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -684,8 +684,8 @@ void FileSystem::copyFile(char* src, char* des) {
     }
 
     char path[2048];
-    char name[62];
-    char entry_name[62];
+    char name[Directory::meta.name_length];
+    char entry_name[Directory::meta.name_length];
     Src.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -781,10 +781,10 @@ void FileSystem::copyFile(char* src, char* des) {
                         }
                     }
                 }
-                unsigned char entry[64];
+                unsigned char entry[Directory::meta.entry_length];
                 for(auto iter = des_dir_node.begin(); iter != des_dir_node.end(); iter++) {
                     Directory des_curr_dir = Directory(disk[iter.value(&des_dir_node)], manager);
-                    if(des_curr_dir.getRecord() >= 15) {
+                    if(des_curr_dir.getRecord() >= Directory::meta.max) {
                         continue;
                     }
                     else {
@@ -815,7 +815,7 @@ void FileSystem::copyFile(char* src, char* des) {
                     }
                 }
 
-                if(des_dir_node.getTotalRecord() >= 520) {
+                if(des_dir_node.getTotalRecord() >= Inode::meta.direct_max + Indirect::meta.max) {
                     std::cout<<"Can not copy: destination folder is full"<<std::endl;
                     dir = dir_backup;
                     return;
@@ -875,7 +875,7 @@ void FileSystem::listDir(char* parameter) {
     char default_color[] = "\033[0m";
     Inode node = Inode(disk[dir], manager);
     unsigned char temp[2];
-    char name[62];
+    char name[Directory::meta.name_length];
     for (auto iter = node.begin(); iter != node.end(); iter++) {
         Directory directory = Directory(disk[iter.value(&node)], manager);
         for (auto dir_iter = directory.begin(); dir_iter != directory.end(); dir_iter++ ) {
@@ -929,7 +929,7 @@ void FileSystem::getPath(char* path) {
     unsigned short chain[32];
     unsigned short curr = dir;
     unsigned char temp[2];
-    char name_temp[62];
+    char name_temp[Directory::meta.name_length];
     int count = 0;
     while(true) {
         if (curr == 0) {

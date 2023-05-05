@@ -5,10 +5,6 @@
 Directory::Directory(unsigned char* block, BlockManager manager) {
     this->block = block;
     this->manager = manager;
-    meta.record_num_start = 0;
-    meta.start = 64;
-    meta.entry_length = 64;
-    meta.name_length = 62;
 }
 
 void Directory::initialize() {
@@ -88,8 +84,8 @@ Directory::iterator Directory::next(iterator iter) {
 
 void Directory::free() {
     unsigned char temp[2];
-    unsigned char name[62];
-    unsigned char entry_name[62] = "..";
+    unsigned char name[meta.name_length];
+    unsigned char entry_name[meta.name_length] = "..";
     unsigned short node_num;
     for(auto iter = next(begin()); iter != end(); iter++) {
         if(iter == next(begin())) {

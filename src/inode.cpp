@@ -6,12 +6,6 @@
 Inode::Inode(unsigned char* block, BlockManager manager) {
     this->block = block;
     this->manager = manager;
-    meta.name_start = 0;
-    meta.name_length = 62;
-    meta.record_num_start = 62;
-    meta.isdir_start = 64;
-    meta.ctime_start = 65;
-    meta.start = 100;
 }
 
 void Inode::initialize() {
@@ -45,9 +39,9 @@ unsigned short Inode::getRecord() {
 }
 
 unsigned short Inode::getTotalRecord() {
-    if(getRecord() >= 11) {
+    if(getRecord() >= meta.direct_max + 1) {
         unsigned char temp[2];
-        unsigned short pos = meta.start + 10 * 2;
+        unsigned short pos = meta.start + meta.direct_max * 2;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         Indirect indirect = Indirect(manager.disk[byteToShort(temp)], manager);
@@ -81,23 +75,23 @@ std::time_t Inode::getCtime() {
 }
 
 void Inode::appendAddress(unsigned char* addr) {
-    if (getRecord() >= 11) {
+    if (getRecord() >= meta.direct_max + 1) {
         unsigned char temp[2];
-        unsigned short pos = meta.start + 2 * 10;
+        unsigned short pos = meta.start + 2 * meta.direct_max;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         Indirect indirect = Indirect(manager.disk[byteToShort(temp)], manager);
-        if(indirect.getRecord() == 510) {
+        if(indirect.getRecord() == Indirect::meta.max + meta.direct_max) {
             std::cout<<"[ERROR] Inode Reach Maximum Capacity"<<std::endl;
             exit(1);
         }
         indirect.appendAddress(addr);
     }
     else {
-        if(getRecord() == 10) {
+        if(getRecord() == meta.direct_max) {
             unsigned short indir_num = manager.allocate();
             unsigned char temp[2];
-            unsigned short pos = meta.start + 10*2;
+            unsigned short pos = meta.start + meta.direct_max*2;
             shortToByte(indir_num, temp);
             block[pos] = temp[0];
             block[pos+1] = temp[1];
@@ -119,7 +113,7 @@ void Inode::appendAddress(unsigned char* addr) {
 
 void Inode::deleteAddress(iterator iter) {
     
-    if (*iter < meta.start + 10*2) {
+    if (*iter < meta.start + meta.direct_max*2) {
         unsigned char num_temp[2];
         // getAddress(iter, num_temp);
         if(isDir()) {
@@ -133,10 +127,10 @@ void Inode::deleteAddress(iterator iter) {
             manager.free(node_num);
         }
 
-        if(getRecord() >= 11) {
+        if(getRecord() >= meta.direct_max + 1) {
             unsigned char temp[2];
             unsigned char addr[2];
-            unsigned short pos = meta.start + 10*2;
+            unsigned short pos = meta.start + meta.direct_max*2;
             temp[0] = block[pos];
             temp[1] = block[pos+1];
             unsigned short indir_num = byteToShort(temp);
@@ -165,12 +159,12 @@ void Inode::deleteAddress(iterator iter) {
     }
     else {
         unsigned char temp[2];
-        unsigned short pos = meta.start + 10*2;
+        unsigned short pos = meta.start + meta.direct_max*2;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         unsigned short indir_num = byteToShort(temp);
         Indirect indirect = Indirect(manager.disk[indir_num], manager);
-        Indirect::iterator converted = *iter - (meta.start + 10*2) + *indirect.begin();
+        Indirect::iterator converted = *iter - (meta.start + meta.direct_max*2) + *indirect.begin();
         indirect.deleteAddress(converted);
         if(indirect.getRecord() == 0) {
             setRecord(getRecord()-1);
@@ -181,17 +175,17 @@ void Inode::deleteAddress(iterator iter) {
 
 void Inode::getAddress(Inode::iterator iter, unsigned char* addr) {
 
-    if(*iter < meta.start + 10*2) {
+    if(*iter < meta.start + meta.direct_max*2) {
         addr[0] = block[*iter];
         addr[1] = block[*iter+1];
     }
     else {
         unsigned char temp[2];
-        unsigned short pos = meta.start + 10 * 2;
+        unsigned short pos = meta.start + meta.direct_max * 2;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         Indirect indirect = Indirect(manager.disk[byteToShort(temp)], manager);
-        Indirect::iterator converted = *iter - (meta.start + 10*2) + *indirect.begin();
+        Indirect::iterator converted = *iter - (meta.start + meta.direct_max*2) + *indirect.begin();
         indirect.getAddress(converted, addr);
     }
 
@@ -202,13 +196,13 @@ Inode::iterator Inode::begin() {
 } 
 
 Inode::iterator Inode::end() {
-    if(getRecord() >= 11) {
+    if(getRecord() >= meta.direct_max + 1) {
         unsigned char temp[2];
-        unsigned short pos = meta.start + 10 * 2;
+        unsigned short pos = meta.start + meta.direct_max * 2;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         Indirect indirect = Indirect(manager.disk[byteToShort(temp)], manager);
-        return iterator(meta.start + 10 * 2 + *indirect.end() - *indirect.begin());
+        return iterator(meta.start + meta.direct_max * 2 + *indirect.end() - *indirect.begin());
     }
     else {
         return iterator(meta.start + getRecord() * 2);
@@ -224,7 +218,7 @@ Inode::iterator Inode::next(Inode::iterator i) {
 // }
 
 void Inode::free() {
-    bool has_indirect = (getRecord() >= 11? true: false);
+    bool has_indirect = (getRecord() >= meta.direct_max + 1? true: false);
     unsigned char temp[2];
     if(isDir()) {
         for (auto iter = begin(); iter != end(); iter++) {
@@ -242,7 +236,7 @@ void Inode::free() {
     }
 
     if(has_indirect) {
-        unsigned short pos = meta.start + 10*2;
+        unsigned short pos = meta.start + meta.direct_max*2;
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         manager.free(byteToShort(temp));
@@ -254,17 +248,17 @@ unsigned short Inode::iterator::value(Inode* p) {
     // temp[0] = p -> block[it];
     // temp[1] = p -> block[it+1];
     // return byteToShort(temp);
-    if(it < p->meta.start + 10*2) {
+    if(it < p->meta.start + meta.direct_max*2) {
         temp[0] = p->block[it];
         temp[1] = p->block[it+1];
         return byteToShort(temp);
     }
     else {
-        unsigned short pos = p->meta.start + 10 * 2;
+        unsigned short pos = p->meta.start + meta.direct_max * 2;
         temp[0] = p->block[pos];
         temp[1] = p->block[pos+1];
         Indirect indirect = Indirect(p->manager.disk[byteToShort(temp)], p->manager);
-        Indirect::iterator converted = it - (p->meta.start + 10*2) + *indirect.begin();
+        Indirect::iterator converted = it - (p->meta.start + meta.direct_max*2) + *indirect.begin();
         return converted.value(&indirect);
     }
 }

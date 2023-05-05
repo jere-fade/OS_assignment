@@ -13,6 +13,7 @@ struct inodeMeta {
     unsigned short isdir_start;
     unsigned short ctime_start;
     unsigned short start;
+    unsigned short direct_max;
 };
 
 class Inode {
@@ -38,7 +39,7 @@ public:
         unsigned short> {
             unsigned short it;
         public:
-            iterator(unsigned short _it = 100) :it(_it) {}
+            iterator(unsigned short _it = Inode::meta.start) :it(_it) {}
             iterator& operator++() {
                 it+=2;
                 return *this;
@@ -59,11 +60,19 @@ public:
     iterator next(iterator);
     void deleteAddress(iterator);
     void getAddress(iterator, unsigned char*);
+    static constexpr inodeMeta meta = {
+        .name_start = 0,
+        .name_length = 62,
+        .record_num_start = 62,
+        .isdir_start = 64,
+        .ctime_start = 65,
+        .start = 100,
+        .direct_max = 10
+    };
 private:
     void setRecord(unsigned short);
     unsigned short getRecord();
     unsigned char* block;
-    inodeMeta meta;
     BlockManager manager;
 };
 

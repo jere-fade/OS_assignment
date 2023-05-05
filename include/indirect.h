@@ -9,6 +9,7 @@ struct indirectMeta {
     unsigned short record_num_start;
     unsigned short isdir_start;
     unsigned short start;
+    unsigned short max;
 };
 
 class Indirect {
@@ -27,7 +28,7 @@ public:
         unsigned short> {
             unsigned short it;
         public:
-            iterator(unsigned short _it = 4) :it(_it) {}
+            iterator(unsigned short _it = Indirect::meta.start) :it(_it) {}
             iterator& operator++ () {
                 it+=2;
                 return *this;
@@ -49,9 +50,15 @@ public:
     void deleteAddress(iterator); // 移除并且free相关node
     void removeAddress(iterator); // 仅移除
     void getAddress(iterator, unsigned char*);
+
+    static constexpr indirectMeta meta = {
+        .record_num_start = 0,
+        .isdir_start = 2,
+        .start = 4,
+        .max = 510
+    };
 private:
     unsigned char* block;
-    indirectMeta meta;
     BlockManager manager;
 };
 

@@ -5,9 +5,6 @@
 // 1020 byte 用来存储 address, 最多510条
 
 Indirect::Indirect(unsigned char* block, BlockManager manager) {
-    meta.record_num_start = 0;
-    meta.isdir_start = 2;
-    meta.start = 4;
     this->block = block;
     this->manager = manager;
 }

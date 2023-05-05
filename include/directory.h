@@ -9,6 +9,7 @@ struct dirMeta {
     unsigned short start;
     unsigned short entry_length;
     unsigned short name_length;
+    unsigned short max;
 };
 
 class Directory {
@@ -26,7 +27,7 @@ public:
         unsigned short> {
             unsigned short it;
         public:
-            iterator(unsigned short _it = 64) :it(_it) {}
+            iterator(unsigned short _it = Directory::meta.start) :it(_it) {}
             iterator& operator++() {
                 it+=64;
                 return *this;
@@ -50,9 +51,15 @@ public:
     iterator end();
     iterator next(iterator);
     void free();
+    static constexpr dirMeta meta = {
+        .record_num_start = 0,
+        .start = 64,
+        .entry_length = 64,
+        .name_length = 62,
+        .max = 15
+    };
 private:
     unsigned char* block;
-    dirMeta meta;
     BlockManager manager;
 };
 #endif
