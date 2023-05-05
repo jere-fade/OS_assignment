@@ -66,11 +66,10 @@ bool FileSystem::changeDir(char* des) {
         Inode curr_node = Inode(disk[dir], manager);
         for (auto node_iter = curr_node.begin(); node_iter != curr_node.end(); node_iter++) {
             Directory curr_dir = Directory(disk[node_iter.value(&curr_node)], manager);
-            for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for (auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++ ) {
                 curr_dir.getName(dir_iter, (unsigned char*)name);
                 if(strcmp(path_name, name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    unsigned short node_num = byteToShort(temp);
+                    unsigned short node_num = dir_iter.num(&curr_dir);
                     Inode next_node = Inode(disk[node_num], manager);
                     if(next_node.isDir()) {
                         match = true;
@@ -142,7 +141,7 @@ void FileSystem::createDir(char* des) {
         unsigned char temp[2];
         for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for (auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
                     std::cout<<"Can not create folder: folder/file having the same name already exists"<<std::endl;
@@ -291,17 +290,16 @@ void FileSystem::deleteDir(char* des) {
     else {
         bool find = false;
         Inode::iterator aim_iter;
-        unsigned short aim_dir_iter;
+        Directory::iterator aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
         for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for (auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++ ) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    Inode curr_node = Inode(disk[dir_iter.num(&curr_dir)], manager);
                     if(curr_node.isDir()) {
                         find = true;
                         aim_iter = iter;
@@ -325,8 +323,7 @@ void FileSystem::deleteDir(char* des) {
             unsigned short curr_dir_num = aim_iter.value(&dir_node);
             Directory curr_dir = Directory(disk[curr_dir_num], manager);
             
-            curr_dir.getNum(aim_dir_iter, temp);
-            unsigned short aim_node = byteToShort(temp);
+            unsigned short aim_node = aim_dir_iter.num(&curr_dir);
             if(dir_backup == aim_node) {
                 std::cout<<"Can not delete folder: you can not delete the working directory"<<std::endl;
                 dir = dir_backup;
@@ -335,11 +332,10 @@ void FileSystem::deleteDir(char* des) {
 
             Inode::iterator last_iter = dir_node.begin();
             for (last_iter; dir_node.next(last_iter) != dir_node.end(); last_iter++) {}
-            dir_node.getAddress(last_iter, temp);
-            unsigned short last_dir_num = byteToShort(temp);
+            unsigned short last_dir_num = last_iter.value(&dir_node);
             Directory last_dir = Directory(disk[last_dir_num], manager);
-            unsigned short last_dir_iter = last_dir.begin();
-            for(last_dir_iter; last_dir.next(last_dir_iter) < last_dir.end(); last_dir_iter = last_dir.next(last_dir_iter)) {}
+            auto last_dir_iter = last_dir.begin();
+            for(last_dir_iter; last_dir.next(last_dir_iter) != last_dir.end(); last_dir_iter++) {}
 
             if((last_iter == aim_iter) && (last_dir_iter == aim_dir_iter)) {
                 curr_dir.deleteEntry(aim_dir_iter);
@@ -401,7 +397,7 @@ void FileSystem::createFile(char* des, unsigned short size) {
         unsigned char temp[2];
         for (auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            for (auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for (auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
                     std::cout<<"Can not create file: folder/file having the same name already exists"<<std::endl;
@@ -518,17 +514,16 @@ void FileSystem::deleteFile(char* des) {
         bool find = false;
         bool findFolder = false;
         Inode::iterator aim_iter;
-        unsigned short aim_dir_iter;
+        Directory::iterator aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
         for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for(auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    Inode curr_node = Inode(disk[dir_iter.num(&curr_dir)], manager);
                     if(!curr_node.isDir()) {
                         find = true;
                         aim_iter = iter;
@@ -550,20 +545,18 @@ void FileSystem::deleteFile(char* des) {
         }
 
         if(find) {
-            dir_node.getAddress(aim_iter, temp);
-            unsigned short curr_dir_num = byteToShort(temp);
+            unsigned short curr_dir_num = aim_iter.value(&dir_node);
             Directory curr_dir = Directory(disk[curr_dir_num], manager);
 
-            curr_dir.getNum(aim_dir_iter, temp);
+            // curr_dir.getNum(aim_dir_iter, temp);
             // unsigned short aim_node = byteToShort(temp);
 
             Inode::iterator last_iter = dir_node.begin();
             for(last_iter; dir_node.next(last_iter) != dir_node.end(); last_iter++) {}
-            dir_node.getAddress(last_iter, temp);
-            unsigned short last_dir_num = byteToShort(temp);
+            unsigned short last_dir_num = last_iter.value(&dir_node);
             Directory last_dir = Directory(disk[last_dir_num], manager);
-            unsigned short last_dir_iter = last_dir.begin();
-            for(last_dir_iter; last_dir.next(last_dir_iter) < last_dir.end(); last_dir_iter = last_dir.next(last_dir_iter)) {}
+            auto last_dir_iter = last_dir.begin();
+            for(last_dir_iter; last_dir.next(last_dir_iter) != last_dir.end(); last_dir_iter++) {}
 
             if((last_iter == aim_iter) && (last_dir_iter == aim_dir_iter)) {
                 curr_dir.deleteEntry(aim_dir_iter);
@@ -625,17 +618,16 @@ void FileSystem::concatenate(char* des) {
     else {
         bool find = false;
         Inode::iterator aim_iter;
-        unsigned short aim_dir_iter;
+        Directory::iterator aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
         for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for(auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    Inode curr_node = Inode(disk[dir_iter.num(&curr_dir)], manager);
                     if(!curr_node.isDir()) {
                         find = true;
                         aim_iter = iter;
@@ -655,10 +647,8 @@ void FileSystem::concatenate(char* des) {
         }
 
         if(find) {
-            dir_node.getAddress(aim_iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
-            curr_dir.getNum(aim_dir_iter, temp);
-            Inode aim_node = Inode(disk[byteToShort(temp)], manager);
+            Directory curr_dir = Directory(disk[aim_iter.value(&dir_node)], manager);
+            Inode aim_node = Inode(disk[aim_dir_iter.num(&curr_dir)], manager);
 
             for(auto iter = aim_node.begin(); iter != aim_node.end(); iter++) {
                 unsigned char* curr_block = disk[iter.value(&aim_node)];
@@ -711,17 +701,16 @@ void FileSystem::copyFile(char* src, char* des) {
         bool find = false;
         bool findFolder = false;
         Inode::iterator aim_iter;
-        unsigned short aim_dir_iter;
+        Directory::iterator aim_dir_iter;
         unsigned char temp[2];
         Inode dir_node = Inode(disk[dir], manager);
 
         for(auto iter = dir_node.begin(); iter != dir_node.end(); iter++) {
             Directory curr_dir = Directory(disk[iter.value(&dir_node)], manager);
-            for(auto dir_iter = curr_dir.begin(); dir_iter < curr_dir.end(); dir_iter = curr_dir.next(dir_iter)) {
+            for(auto dir_iter = curr_dir.begin(); dir_iter != curr_dir.end(); dir_iter++ ) {
                 curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                 if(strcmp(name, entry_name) == 0) {
-                    curr_dir.getNum(dir_iter, temp);
-                    Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+                    Inode curr_node = Inode(disk[dir_iter.num(&curr_dir)], manager);
                     if(!curr_node.isDir()) {
                         find = true;
                         aim_iter = iter;
@@ -741,10 +730,8 @@ void FileSystem::copyFile(char* src, char* des) {
 
         if(find) {
             dir = dir_backup;
-            dir_node.getAddress(aim_iter, temp);
-            Directory curr_dir = Directory(disk[byteToShort(temp)], manager); 
-            curr_dir.getNum(aim_dir_iter, temp);
-            Inode src_node = Inode(disk[byteToShort(temp)], manager);
+            Directory curr_dir = Directory(disk[aim_iter.value(&dir_node)], manager); 
+            Inode src_node = Inode(disk[aim_dir_iter.num(&curr_dir)], manager);
 
             for(int i = 0; i < strlen(path); i++) {
                 path[i] = '\0';
@@ -785,7 +772,7 @@ void FileSystem::copyFile(char* src, char* des) {
                 Inode des_dir_node = Inode(disk[dir], manager);
                 for(auto iter = des_dir_node.begin(); iter != des_dir_node.end(); iter++) {
                     Directory des_curr_dir = Directory(disk[iter.value(&des_dir_node)], manager);
-                    for(auto dir_iter = des_curr_dir.begin(); dir_iter < des_curr_dir.end(); dir_iter = des_curr_dir.next(dir_iter)) {
+                    for(auto dir_iter = des_curr_dir.begin(); dir_iter != des_curr_dir.end(); dir_iter++) {
                         des_curr_dir.getName(dir_iter, (unsigned char*)entry_name);
                         if(strcmp(name, entry_name) == 0) {
                             std::cout<<"Can not copy: folder/file having the same name already exists"<<std::endl;
@@ -891,9 +878,8 @@ void FileSystem::listDir(char* parameter) {
     char name[62];
     for (auto iter = node.begin(); iter != node.end(); iter++) {
         Directory directory = Directory(disk[iter.value(&node)], manager);
-        for (auto dir_iter = directory.begin(); dir_iter < directory.end(); dir_iter = directory.next(dir_iter)) {
-            directory.getNum(dir_iter, temp);
-            Inode curr_node = Inode(disk[byteToShort(temp)], manager);
+        for (auto dir_iter = directory.begin(); dir_iter != directory.end(); dir_iter++ ) {
+            Inode curr_node = Inode(disk[dir_iter.num(&directory)], manager);
             directory.getName(dir_iter, (unsigned char*)name);
             if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
                 continue;
@@ -952,12 +938,10 @@ void FileSystem::getPath(char* path) {
         chain[count] = curr; 
         Inode curr_node = Inode(disk[curr], manager);
         auto iter = curr_node.begin();
-        curr_node.getAddress(iter, temp);
-        Directory curr_dir = Directory(disk[byteToShort(temp)], manager);
+        Directory curr_dir = Directory(disk[iter.value(&curr_node)], manager);
         auto dir_iter = curr_dir.begin();
         dir_iter = curr_dir.next(dir_iter);
-        curr_dir.getNum(dir_iter, temp);
-        curr = byteToShort(temp);
+        curr = dir_iter.num(&curr_dir);
         count++;
     }
 

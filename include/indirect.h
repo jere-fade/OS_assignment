@@ -3,6 +3,7 @@
 #include "BlockManager.h"
 #include "inode.h"
 #include "directory.h"
+#include <iterator>
 
 struct indirectMeta {
     unsigned short record_num_start;
@@ -16,15 +17,38 @@ public:
     void initialize();
     void setRecord(unsigned short);
     unsigned short getRecord();
-    void appendAddress(unsigned char*);
-    void deleteAddress(unsigned short); // 移除并且free相关node
-    void removeAddress(unsigned short); // 仅移除
-    void getAddress(unsigned short, unsigned char*);
     bool isDir();
     void setIsDir(bool);
-    unsigned short begin();
-    unsigned short end();
-    unsigned short next(unsigned short);
+    class iterator: public std::iterator<
+        std::input_iterator_tag,
+        unsigned short,
+        unsigned short,
+        const unsigned short*,
+        unsigned short> {
+            unsigned short it;
+        public:
+            iterator(unsigned short _it = 4) :it(_it) {}
+            iterator& operator++ () {
+                it+=2;
+                return *this;
+            }
+            iterator operator++(int) {
+                iterator retval = *this;
+                ++(*this);
+                return retval;
+            }
+            bool operator==(iterator other) { return it == other.it;}
+            bool operator!=(iterator other) { return it != other.it;}
+            reference operator*() const {return it;}
+            unsigned short value(Indirect* p);
+        };
+    iterator begin();
+    iterator end();
+    iterator next(iterator);
+    void appendAddress(unsigned char*);
+    void deleteAddress(iterator); // 移除并且free相关node
+    void removeAddress(iterator); // 仅移除
+    void getAddress(iterator, unsigned char*);
 private:
     unsigned char* block;
     indirectMeta meta;

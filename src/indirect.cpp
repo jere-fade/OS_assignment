@@ -45,46 +45,51 @@ void Indirect::appendAddress(unsigned char* addr) {
     setRecord(getRecord()+1);
 }
 
-void Indirect::removeAddress(unsigned short iter) {
-    unsigned short curr = iter;
-    unsigned short nextone = next(curr);
-    for(nextone; nextone < end(); nextone = next(nextone)) {
-        block[curr] = block[nextone];
-        block[curr+1] = block[nextone+1];
-        curr = next(curr);
+void Indirect::removeAddress(iterator iter) {
+    iterator curr = iter;
+    iterator nextone = next(curr);
+    for(nextone; nextone != end(); nextone++) {
+        block[*curr] = block[*nextone];
+        block[*curr+1] = block[*nextone+1];
+        curr++;
     }
     setRecord(getRecord()-1);
 }
 
-void Indirect::deleteAddress(unsigned short iter) {
-    unsigned char temp[2];
-    getAddress(iter, temp);
+void Indirect::deleteAddress(iterator iter) {
     if(isDir()) {
-        unsigned short dir_num = byteToShort(temp);
+        unsigned short dir_num = iter.value(this);
         Directory directory = Directory(manager.disk[dir_num], manager);
         directory.free();
         manager.free(dir_num);
     }
     else {
-        unsigned short node_num = byteToShort(temp);
+        unsigned short node_num = iter.value(this);
         manager.free(node_num);
     }
     removeAddress(iter);
 }
 
-void Indirect::getAddress(unsigned short iter, unsigned char* addr) {
-    addr[0] = block[iter];
-    addr[1] = block[iter+1];
+void Indirect::getAddress(iterator iter, unsigned char* addr) {
+    addr[0] = block[*iter];
+    addr[1] = block[*iter+1];
 }
 
-unsigned short Indirect::begin() {
-    return meta.start;
+Indirect::iterator Indirect::begin() {
+    return iterator(meta.start);
 }
 
-unsigned short Indirect::end() {
-    return meta.start + getRecord() * 2;
+Indirect::iterator Indirect::end() {
+    return iterator(meta.start + getRecord() * 2);
 }
 
-unsigned short Indirect::next(unsigned short iter) {
-    return iter + 2;
+Indirect::iterator Indirect::next(iterator iter) {
+    return ++iter;
+}
+
+unsigned short Indirect::iterator::value(Indirect* p) {
+    unsigned char temp[2];
+    temp[0] = p -> block[it];
+    temp[1] = p -> block[it+1];
+    return byteToShort(temp);
 }
