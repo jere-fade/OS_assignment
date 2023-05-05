@@ -378,8 +378,8 @@ void FileSystem::createFile(char* des, unsigned short size) {
     }
 
     char path[2048];
-    char name[Directory::meta.max];
-    char entry_name[Directory::meta.max];
+    char name[Directory::meta.name_length];
+    char entry_name[Directory::meta.name_length];
     syspath.separate(path, name);
 
     if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
@@ -922,6 +922,42 @@ void FileSystem::listDir(char* parameter) {
         if(parameter == nullptr) {
             std::cout<<std::endl;
         }
+    }
+}
+
+void FileSystem::printTree() {
+    printTreeHelper(dir, 0);
+}
+
+void FileSystem::printTreeHelper(unsigned short node_num, int depth) {
+    char dark_blue[] = "\033[34m";
+    char dark_green[] = "\033[32m";
+    char default_color[] = "\033[0m";
+    Inode node = Inode(disk[node_num], manager);
+    char name[Directory::meta.name_length];
+    for (auto iter = node.begin(); iter != node.end(); iter++) {
+        Directory directory = Directory(disk[iter.value(&node)], manager);
+        for (auto dir_iter = directory.begin(); dir_iter != directory.end(); dir_iter++) {
+            unsigned short curr_node_num = dir_iter.num(&directory);
+            Inode curr_node = Inode(disk[curr_node_num], manager);
+            directory.getName(dir_iter, (unsigned char*)name);
+            if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+                continue;
+            }
+            if(curr_node.isDir()) {
+                for (int i = 0; i < depth + 1; i++) {
+                    std::cout<<" |";
+                }
+                printf("%c%s%s%s\n", '-', dark_blue, name, default_color);
+                printTreeHelper(curr_node_num, depth+1);
+            }
+            else {
+                for (int i = 0; i < depth + 1; i++) {
+                    std::cout<<" |";
+                }
+                printf("%c%s%s%s\n", '-', dark_green, name, default_color);
+            }
+         }
     }
 }
 

@@ -1,4 +1,5 @@
 #include "path.h"
+#include "directory.h"
 #include <string.h>
 #include <iostream>
 
@@ -21,7 +22,7 @@ Path::Path(char* raw_path) {
             if (raw_path[i] != '/') {
                 path[depth][name_length] = raw_path[i];
                 name_length++;
-                if (name_length == 62) {
+                if (name_length == Directory::meta.name_length) {
                     std::cout<<"[ERROR] name length can not be greater than 62 (including ending /0)!"<<std::endl;
                     exit(1);
                 }
@@ -41,7 +42,7 @@ Path::Path(char* raw_path) {
 } 
 
 void Path::getPath(unsigned short iter, char* name) {
-    for (int i = 0; i < 62; i++) {
+    for (int i = 0; i < Directory::meta.name_length; i++) {
         name[i] = path[iter][i];
     }
 }
@@ -74,7 +75,7 @@ unsigned short Path::next(unsigned short iter) {
 void Path::separate(char* path, char* name) {
     int path_count = 0;
     int name_count = 0;
-    char temp[62];
+    char temp[Directory::meta.name_length];
     if(isRoot()) {
         path[0] = '/';
         path[1] = '\0';
