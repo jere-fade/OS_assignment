@@ -121,15 +121,15 @@ void Inode::deleteAddress(iterator iter) {
     
     if (*iter < meta.start + 10*2) {
         unsigned char num_temp[2];
-        getAddress(iter, num_temp);
+        // getAddress(iter, num_temp);
         if(isDir()) {
-            unsigned short dir_num = byteToShort(num_temp);
+            unsigned short dir_num = iter.value(this);
             Directory directory = Directory(manager.disk[dir_num], manager);
             directory.free();
             manager.free(dir_num);
         }
         else {
-            unsigned short node_num = byteToShort(num_temp);
+            unsigned short node_num = iter.value(this);
             manager.free(node_num);
         }
 
@@ -158,7 +158,7 @@ void Inode::deleteAddress(iterator iter) {
             for(nextone; nextone != end(); nextone++) {
                 block[*curr] = block[*nextone];
                 block[*curr+1] = block[*nextone+1];
-                curr = next(curr);
+                curr++;
             }
             setRecord(getRecord()-1);
         }
@@ -216,7 +216,7 @@ Inode::iterator Inode::end() {
 }
 
 Inode::iterator Inode::next(Inode::iterator i) {
-    return i++;
+    return ++i;
 }
 
 // unsigned short Inode::next(unsigned short iter) {
@@ -246,5 +246,26 @@ void Inode::free() {
         temp[0] = block[pos];
         temp[1] = block[pos+1];
         manager.free(byteToShort(temp));
+    }
+}
+
+unsigned short Inode::iterator::value(Inode* p) {
+    unsigned char temp[2];
+    // temp[0] = p -> block[it];
+    // temp[1] = p -> block[it+1];
+    // return byteToShort(temp);
+    if(it < p->meta.start + 10*2) {
+        temp[0] = p->block[it];
+        temp[1] = p->block[it+1];
+        return byteToShort(temp);
+    }
+    else {
+        unsigned short pos = p->meta.start + 10 * 2;
+        temp[0] = p->block[pos];
+        temp[1] = p->block[pos+1];
+        Indirect indirect = Indirect(p->manager.disk[byteToShort(temp)], p->manager);
+        unsigned short converted = it - (p->meta.start + 10*2) + indirect.begin();
+        indirect.getAddress(converted, temp);
+        return byteToShort(temp);
     }
 }

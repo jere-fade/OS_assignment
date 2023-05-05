@@ -321,8 +321,8 @@ void FileSystem::deleteDir(char* des) {
         }
 
         if(find) {
-            dir_node.getAddress(aim_iter, temp);
-            unsigned short curr_dir_num = byteToShort(temp);
+            // dir_node.getAddress(aim_iter, temp);
+            unsigned short curr_dir_num = aim_iter.value(&dir_node);
             Directory curr_dir = Directory(disk[curr_dir_num], manager);
             
             curr_dir.getNum(aim_dir_iter, temp);
@@ -688,7 +688,7 @@ void FileSystem::copyFile(char* src, char* des) {
     Path Src(src);
     Path Des(des);
 
-    if(Src.isRoot() || Des.isRoot()) {
+    if(Src.isRoot()) {
         std::cout<<"Can not copy: file name emtpy"<<std::endl;
         return;
     }

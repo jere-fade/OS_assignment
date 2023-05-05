@@ -116,7 +116,7 @@ void BlockManager::printDisk(int index) {
     for (int i = 0; i < BLOCK_SIZE; i+=2) {
         unsigned char temp[2];
         if (index == getHead() && i == getOffset()) {
-            std::cout<<" || ";
+            std::cout<<"|| ";
         }
         temp[0] = disk[index][i];
         temp[1] = disk[index][i+1];

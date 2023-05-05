@@ -51,12 +51,7 @@ public:
             bool operator==(iterator other) { return it == other.it; }
             bool operator!=(iterator other) { return it != other.it; }
             reference operator*() const {return it;}
-            unsigned short value(Inode* p) {
-                unsigned char temp[2];
-                temp[0] = p -> block[it];
-                temp[1] = p -> block[it+1];
-                return byteToShort(temp);
-            }
+            unsigned short value(Inode* p);
         };
 
     iterator begin();
