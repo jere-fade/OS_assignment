@@ -15,7 +15,7 @@
 
 int main(int, char**) {
 
-    std::string data_path = "../btrfs.bin";
+    std::string data_path = "btrfs.bin";
 
     char default_color[] = "\033[0m";
     char blue_b[] = "\033[104m";
