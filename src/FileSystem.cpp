@@ -971,7 +971,7 @@ void FileSystem::usage() {
     double percent = (double) used / BLOCK_NUM;
     printf("Free Block: %s%5d%s  Used Block: %s%5d%s  Total Block: %s%5d%s\n", green, free, default_color, red, used, default_color, blue, BLOCK_NUM, default_color);
 
-    std::cout << cyan << "Usage: " <<std::fixed << std::setprecision(2) << std::setw(6) << percent * 100 <<" %"<< default_color << std::endl;
+    std::cout << "Usage: " << cyan <<std::fixed << std::setprecision(2) << std::setw(6) << percent * 100 <<" %"<< default_color << std::endl;
 
 }
 
