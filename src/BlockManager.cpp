@@ -4,21 +4,11 @@
 #include<iostream>
 
 BlockManager::BlockManager() {
-    meta.rootDir = 0;
-    meta.list_head[0] = 1;
-    meta.list_head[1] = 0;
-    meta.list_offset[0] = 1;
-    meta.list_offset[1] = 2;
     disk = nullptr; 
 }
 
 // meta 是存 free list 头部信息的位置, 目前放在block 1
 BlockManager::BlockManager(unsigned char** disk) {
-    meta.rootDir = 0;
-    meta.list_head[0] = 1;
-    meta.list_head[1] = 0;
-    meta.list_offset[0] = 1;
-    meta.list_offset[1] = 2;
     this->disk = disk; 
 }
 
@@ -110,23 +100,6 @@ void BlockManager::free(unsigned short block_num) {
     }
 }
 
-void BlockManager::printDisk(int index) {
-
-    std::cout<<"######## block: "<<index <<std::endl;
-    for (int i = 0; i < BLOCK_SIZE; i+=2) {
-        unsigned char temp[2];
-        if (index == getHead() && i == getOffset()) {
-            std::cout<<"|| ";
-        }
-        temp[0] = disk[index][i];
-        temp[1] = disk[index][i+1];
-        unsigned short symbol = byteToShort(temp);
-        std::cout<<symbol<<" ";
-    }
-    std::cout<<std::endl;
-    std::cout<<"#########"<<std::endl;
-}
-
 unsigned short BlockManager::getHead() {
     unsigned char temp[2];
     temp[0] = disk[meta.list_head[0]][meta.list_head[1]];
@@ -153,6 +126,14 @@ void BlockManager::setOffset(unsigned short num) {
     shortToByte(num, temp);
     disk[meta.list_offset[0]][meta.list_offset[1]] = temp[0];
     disk[meta.list_offset[0]][meta.list_offset[1]+1] = temp[1];
+}
+
+bool BlockManager::getIni() {
+    return disk[meta.has_initialized[0]][meta.has_initialized[1]];
+}
+
+void BlockManager::setIni(bool i) {
+    disk[meta.has_initialized[0]][meta.has_initialized[1]] = i; 
 }
 
 unsigned short BlockManager::listSize() {
