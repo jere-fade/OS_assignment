@@ -11,6 +11,13 @@
 |           Free Block Manager               |
 ```
 
+# disk
+
+| block 0 | block 1 | block 2 | ... |
+| --- | --- | --- | --- |
+| inode for root dir | meta info | free list start ||
+
+
 # inode
 
 ```
@@ -48,4 +55,11 @@ Block Number
 
 # 可以改进
 
-- iterator 应当返回 pointer
+- [x] iterator 应当返回 pointer
+- [x] meta struct 设为 static const
+
+# 剩余事项
+
+- [ ] 先用md糊个文档
+- [ ] 跨平台编译
+- [ ] 开个branch用来提交
