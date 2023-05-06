@@ -1,4 +1,4 @@
 build
 .vscode
 design.md
-btrfs.bin
+*.bin
