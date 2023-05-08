@@ -85,14 +85,11 @@ Directory::iterator Directory::next(iterator iter) {
 void Directory::free() {
     unsigned char temp[2];
     unsigned char name[meta.name_length];
-    unsigned char entry_name[meta.name_length] = "..";
     unsigned short node_num;
-    for(auto iter = next(begin()); iter != end(); iter++) {
-        if(iter == next(begin())) {
-            getName(iter, name);
-            if(strcmp((char*)name, (char*)entry_name) == 0) {
-                continue;
-            }
+    for(auto iter = begin(); iter != end(); iter++) {
+        getName(iter, name);
+        if(strcmp((char*)name, ".") == 0 || strcmp((char*)name, "..") == 0) {
+            continue;
         }
         node_num = iter.num(this);
         Inode node = Inode(manager.disk[node_num], manager);
