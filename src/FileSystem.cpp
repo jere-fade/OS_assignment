@@ -842,43 +842,16 @@ void FileSystem::listDir(char* parameter) {
             if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
                 continue;
             } 
-            if(parameter == nullptr) {
-                if(curr_node.isDir()) {
-                    printf("%s%s%s  ", dark_blue, name, default_color);
-                }
-                else {
-                    printf("%s%s%s  ", dark_green, name, default_color);
-                }
-            }
-            else if(strcmp(parameter, "-l") == 0 || strcmp(parameter, "-lh") == 0) {
-                std::time_t time = curr_node.getCtime();
-                char* t = ctime(&time);
-                t[strlen(t) - 1] = '\0';
-                int size = curr_node.getTotalRecord();
-                if(strcmp(parameter, "-l") == 0) {
-                    size *= 1024;
-                    if(curr_node.isDir()) {
-                        printf("%6d %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
-                    }
-                    else {
-                        printf("%6d %s %s%-62s%s\n", size, t, dark_green, name, default_color);
-                    }
-                }
-                else {
-                    if(curr_node.isDir()) {
-                        printf("%3dK %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
-                    }
-                    else {
-                        printf("%3dK %s %s%-62s%s\n", size, t, dark_green, name, default_color);
-                    }
-                }
+            std::time_t time = curr_node.getCtime();
+            char* t = ctime(&time);
+            t[strlen(t) - 1] = '\0';
+            int size = curr_node.getTotalRecord();
+            if(curr_node.isDir()) {
+                printf("%3dK %s %s%-62s%s\n", size, t, dark_blue, name, default_color);
             }
             else {
-
+                printf("%3dK %s %s%-62s%s\n", size, t, dark_green, name, default_color);
             }
-        }
-        if(parameter == nullptr) {
-            std::cout<<std::endl;
         }
     }
 }

@@ -15,6 +15,11 @@
 
 int main(int, char**) {
 
+    printf("Welcome to the virtual file system\n");
+    printf("Group Member: 花子奇 202030430301\n");
+    printf("Group Member: 黎泊远 202030430103\n");
+    printf("Group Member: 刘请 202030430127\n");
+
     std::string data_path = "btrfs.bin";
 
     char default_color[] = "\033[0m";
@@ -28,7 +33,8 @@ int main(int, char**) {
     unsigned char** disk;
 
     std::ifstream f(data_path);
-    if(!f.good()) {
+    bool exist = f.good();
+    if(!exist) {
         std::ofstream create(data_path);
         create.close();
     }
@@ -41,9 +47,19 @@ int main(int, char**) {
         for (int i = 0; i < BLOCK_NUM; i++) {
             disk[i] = new unsigned char[BLOCK_SIZE];
         }
-        for (int i = 0; i < BLOCK_NUM; i++) {
-            input_file.read((char*)disk[i], BLOCK_SIZE);
+        if(exist) {
+            for (int i = 0; i < BLOCK_NUM; i++) {
+                input_file.read((char*)disk[i], BLOCK_SIZE);
+            }
         }
+        else {
+            for (int i = 0; i < BLOCK_NUM; i++) {
+                for (int j = 0; j < BLOCK_SIZE; j++) {
+                    disk[i][j] = '\0';
+                }
+            }
+        }
+
         input_file.close();
     }
     else {
@@ -180,9 +196,6 @@ int main(int, char**) {
         else if(strcmp(argv[0], "dir") == 0) {
             if(argc == 1) {
                 fs.listDir(nullptr);
-            }
-            else if(argc == 2) {
-                fs.listDir(argv[1]);
             }
             else {
                 std::cout<<"dir: arguments number is wrong"<<std::endl;
