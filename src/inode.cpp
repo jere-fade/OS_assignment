@@ -115,7 +115,6 @@ void Inode::deleteAddress(iterator iter) {
     
     if (*iter < meta.start + meta.direct_max*2) {
         unsigned char num_temp[2];
-        // getAddress(iter, num_temp);
         if(isDir()) {
             unsigned short dir_num = iter.value(this);
             Directory directory = Directory(manager.disk[dir_num], manager);

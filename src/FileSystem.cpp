@@ -118,7 +118,7 @@ void FileSystem::createDir(char* des) {
     }
 
     if(!changeDir(path)) {
-        std::cout<<"Can not fine path"<<std::endl;
+        std::cout<<"Can not find path"<<std::endl;
         return;
     }
     else {
@@ -263,7 +263,7 @@ void FileSystem::deleteDir(char* des) {
     }
 
     if(!changeDir(path)) {
-        std::cout<<"Can not fine path"<<std::endl;
+        std::cout<<"Can not find path"<<std::endl;
         return;
     }
     else {

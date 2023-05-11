@@ -19,6 +19,7 @@ int main(int, char**) {
     printf("Group Member: 花子奇 202030430301\n");
     printf("Group Member: 黎泊远 202030430103\n");
     printf("Group Member: 刘请 202030430127\n");
+    printf("\n");
 
     std::string data_path = "btrfs.bin";
 
