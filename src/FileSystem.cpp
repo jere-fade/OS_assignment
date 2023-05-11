@@ -8,6 +8,9 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <cmath>
+#include <thread>
+#include <chrono>
 
 FileSystem::FileSystem(unsigned char** disk) {
     this->disk = disk;
@@ -932,20 +935,61 @@ void FileSystem::getPath(char* path) {
     }
 }
 
+double f(double t) {
+    double pi = 3.14159;
+    return sin(pi/2*t);
+}
+
 void FileSystem::usage() {
     int free = manager.listSize();
     int used = BLOCK_NUM - free;
+    int steps = 800;
+    double step = (double) 1 / steps;
+    std::vector<double> point;
+    for (int i = 1; i <= steps; i++) {
+        point.push_back(f(step * i));
+    }
 
     char blue[] = "\033[94m";
     char green[] = "\033[92m";
     char red[] = "\033[91m";
+    char magenta[] = "\033[95m";
     char cyan[] = "\033[96m";
     char default_color[] = "\033[0m";
     double percent = (double) used / BLOCK_NUM;
     printf("Free Block: %s%5d%s  Used Block: %s%5d%s  Total Block: %s%5d%s\n", green, free, default_color, red, used, default_color, blue, BLOCK_NUM, default_color);
+    std::string fill[] = {"▎", "▌", "▊", "█"};
 
-    std::cout << "Usage: " << cyan <<std::fixed << std::setprecision(2) << std::setw(6) << percent * 100 <<" %"<< default_color << std::endl;
+    for (int j = 0; j < point.size(); j++)
+    {
+        int barWidth = 80;
 
+        std::cout << "[";
+        int pos = barWidth * point[j] * percent * 4;
+        int floor = (pos/4)*4;
+        for (int i = 0; i < barWidth * 4; ++i)
+        {
+            if (i < floor && i%4 == 0) {
+                std::cout<<magenta;
+                std::cout<<"█";
+                std::cout<<default_color;
+            }
+            else if (i >= floor && (i == pos - 1)) {
+                std::cout<<magenta;
+                std::cout<<fill[i%4];
+                std::cout<<default_color;
+            }
+            else if (i >= pos && (i%4 == 0))
+                std::cout << " ";
+
+        }
+        std::cout << "] " << cyan <<std::fixed << std::setprecision(2) << std::setw(6) << point[j] * percent * 100 << " %\r";
+        std::cout << default_color;
+        std::cout.flush();
+
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
+    }
+    std::cout<<std::endl;
 }
 
 void FileSystem::fillFile(unsigned short block_num) {
