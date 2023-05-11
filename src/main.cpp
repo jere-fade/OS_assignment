@@ -29,6 +29,21 @@ int main(int, char**) {
     char white_f[] = "\033[97m";
     char cyan[] = "\033[96m";
     char light_cyan[] = "\033[36m";
+
+    char black_folder[5];
+    black_folder[0] = 0xF0;
+    black_folder[1] = 0x9F;
+    black_folder[2] = 0x96;
+    black_folder[3] = 0xBF;
+    black_folder[4] = '\0';
+
+    char folder[5];
+    folder[0] = 0xF0;
+    folder[1] = 0x9F;
+    folder[2] = 0x93;
+    folder[3] = 0x82;
+    folder[4] = '\0';
+    
     srand(time(NULL));
 
     unsigned char** disk;
@@ -82,7 +97,12 @@ int main(int, char**) {
         fs.initialize();
         manager.setIni(true);
     }
-    
+
+    FILE* fp = popen("tput cols", "r");
+    char result[10];
+    fgets(result, sizeof(result), fp);
+    int len = std::stoi(result);   
+
     while(true) {
 
         char command[4096];
@@ -93,7 +113,9 @@ int main(int, char**) {
         double percent = (double) (BLOCK_NUM - manager.listSize()) / BLOCK_NUM * 100;
 
         fs.getPath(path);
-        printf("\r%s%s %c%s%s%s ", blue_b, white_f, '[' ,path, "] > ", default_color);
+        printf("\r%s%*s  %.2f%c%s", cyan, len-6, black_folder, percent, '%', default_color);
+        printf("\r%s%s %s %c%s%s %s\n", blue_b, white_f, folder, '[' ,path, "] >", default_color);
+        printf("%s\u2570\u2500\ue285\ufb00%s ", light_cyan, default_color);
 
         if(fgets(command, 4096, stdin) != NULL) {
             argv[argc] = strtok(command, " \n\t");
