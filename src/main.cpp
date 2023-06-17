@@ -96,6 +96,108 @@ int main(int, char**) {
     if (initialize == false) {
         fs.initialize();
         manager.setIni(true);
+
+        fs.createDir((char*)"/bin");
+        fs.createDir((char*)"/dev");
+        fs.createDir((char*)"/etc");
+        fs.createDir((char*)"/lib");
+        fs.createDir((char*)"/mnt");
+        fs.createDir((char*)"/var");
+        fs.createDir((char*)"/run");
+        fs.createDir((char*)"/root");
+        fs.createDir((char*)"/home");
+        fs.createDir((char*)"/media");
+
+        fs.changeDir((char*)"/etc");
+        fs.createFile((char*)"aliases", 50);
+        fs.createDir((char*)"anaconda");
+        fs.createFile((char*)"bashrc", 40);
+        fs.createDir((char*)"clash");
+        fs.createFile((char*)"clash/cache.db", 20);
+        fs.createFile((char*)"clash/config.yaml", 100);
+        fs.createFile((char*)"clash/Country.mmdb", 200);
+        fs.createDir((char*)"dnf");
+        fs.createDir((char*)"frp");
+        fs.createFile((char*)"frp/frpc.ini", 20);
+        fs.createFile((char*)"frp/frpc_full.ini", 40);
+        fs.createFile((char*)"frp/frps.ini", 30);
+        fs.createFile((char*)"frp/frps_full.ini", 40);
+        fs.createDir((char*)"systemd");
+        fs.createFile((char*)"systemd/networkd.conf", 80);
+        fs.createFile((char*)"systemd/sleep.conf", 70);
+        fs.changeDir((char*)"/etc/systemd");
+        fs.createDir((char*)"system");
+        fs.createFile((char*)"system/clash.service", 40);
+        fs.createFile((char*)"system/frpc.service", 50);
+        fs.createFile((char*)"system/frps.service", 50);
+        fs.createFile((char*)"system/span.nextcloud.apache.service", 30);
+        fs.createFile((char*)"system/snap.nextcloud.mysql.service", 50);
+        fs.createDir((char*)"texlive");
+        fs.createDir((char*)"vulkan");
+        fs.createDir((char*)"X11");
+
+        fs.changeDir((char*)"/bin");
+        fs.createFile((char*)"bash", 400);
+        fs.createFile((char*)"gcc", 500);
+        fs.createFile((char*)"gdb", 400);
+        fs.createFile((char*)"git", 300);
+        fs.createFile((char*)"gnome-disks", 240);
+        fs.createFile((char*)"gnome-terminal", 332);
+        fs.createFile((char*)"clash", 112);
+        fs.createFile((char*)"ssh", 235);
+
+        fs.changeDir((char*)"/var");
+        fs.createDir((char*)"lib");
+        fs.createDir((char*)"log");
+        fs.changeDir((char*)"lib");
+        fs.createDir((char*)"dnf");
+        fs.createDir((char*)"snapd");
+        fs.createFile((char*)"dnf/history.sqlite", 133);
+        fs.createFile((char*)"dnf/history.sqlite-shm", 102);
+        fs.createDir((char*)"dnf/repos");
+        fs.createFile((char*)"dnf/repos/fedora-15f125461563fe27", 300);
+        fs.createFile((char*)"dnf/repos/updates-8ef319d1faeb5d3e", 200);
+
+        fs.changeDir((char*)"/dev");
+        fs.createDir((char*)"cpu");
+        fs.createDir((char*)"cpu/0");
+        fs.createDir((char*)"cpu/1");
+        fs.createDir((char*)"cpu/2");
+        fs.createDir((char*)"cpu/3");
+        fs.createDir((char*)"disk");
+        fs.createDir((char*)"net");
+        fs.createFile((char*)"net/tun", 198);
+        fs.createFile((char*)"stdin", 77);
+        fs.createFile((char*)"stdout", 65);
+        fs.createFile((char*)"nvme0n1p8", 21);
+        fs.createFile((char*)"nvme0n1p9", 22);
+
+        fs.changeDir((char*)"/lib");
+        fs.createDir((char*)"firewalld");
+        fs.createDir((char*)"grub");
+        fs.createDir((char*)"systemd");
+
+        fs.changeDir((char*)"/lib/firewalld");
+        fs.createDir((char*)"ipsets");
+        fs.createDir((char*)"policies");
+        fs.createFile((char*)"policies/allow-host-ipv6.xml", 33);
+        fs.createDir((char*)"services");
+        fs.createFile((char*)"services/ssh.xml", 40);
+        fs.createFile((char*)"services/dns.xml", 55);
+        fs.createFile((char*)"services/http.xml", 120);
+        fs.createFile((char*)"services/https.xml", 199);   
+        fs.createDir((char*)"zones");
+        fs.createFile((char*)"zones/public.xml", 200);
+        fs.createFile((char*)"zones/trusted.xml", 175);
+
+        fs.changeDir((char*)"/lib/systemd");
+        fs.createDir((char*)"system");
+        fs.createFile((char*)"system/bluetooth.service", 80);
+        fs.createFile((char*)"system/httpd.socket", 70);
+        fs.createFile((char*)"systemd-systemctl", 50);
+        fs.createFile((char*)"systemd-sleep", 20);
+
+        fs.changeDir((char*)"/");
     }
 
     FILE* fp = popen("tput cols", "r");
